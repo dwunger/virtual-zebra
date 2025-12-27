@@ -894,83 +894,182 @@
         }
 
         /* ============================================
-           GLASSMORPHISM LABEL CARDS
+           NEON TERMINAL LABEL CARDS - CRT Style
            ============================================ */
         .label-card {
-            background: var(--label-bg);
-            color: var(--label-text);
-            border: 2px solid var(--label-border);
-            border-radius: 6px;
-            padding: 10px 12px;
+            background: #0a0a0a;
+            color: #33ff33;
+            border: 1px solid #33ff33;
+            border-radius: 2px;
+            padding: 12px 14px;
             font-size: 10px;
-            line-height: 1.6;
+            line-height: 1.7;
             position: relative;
-            animation: slideInFromRight 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            animation: slideInFromRight 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), crt-flicker 0.1s ease-in-out;
             box-shadow: 
-                0 4px 12px rgba(0, 0, 0, 0.1),
-                0 8px 24px rgba(0, 0, 0, 0.1);
+                0 0 10px rgba(51, 255, 51, 0.3),
+                0 0 30px rgba(51, 255, 51, 0.1),
+                inset 0 0 60px rgba(51, 255, 51, 0.03);
             transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+            overflow: hidden;
+            text-shadow: 0 0 8px rgba(51, 255, 51, 0.8);
         }
 
-        /* MICRO-INTERACTION: Label card hover */
+        /* CRT scanline effect on labels */
+        .label-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: repeating-linear-gradient(
+                0deg,
+                transparent,
+                transparent 2px,
+                rgba(0, 0, 0, 0.3) 2px,
+                rgba(0, 0, 0, 0.3) 4px
+            );
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        /* CRT screen curvature/vignette */
+        .label-card::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(
+                ellipse at center,
+                transparent 0%,
+                transparent 60%,
+                rgba(0, 0, 0, 0.4) 100%
+            );
+            pointer-events: none;
+            z-index: 2;
+        }
+
+        @keyframes crt-flicker {
+            0% { opacity: 0.97; }
+            50% { opacity: 1; }
+            100% { opacity: 0.98; }
+        }
+
+        /* MICRO-INTERACTION: Label card hover - intensify glow */
         .label-card:hover {
-            transform: translateX(-6px) scale(1.02) rotateY(-2deg);
+            transform: translateX(-4px) scale(1.02);
+            border-color: #66ff66;
             box-shadow: 
-                0 8px 24px rgba(0, 0, 0, 0.15),
-                0 16px 48px rgba(0, 0, 0, 0.1);
+                0 0 20px rgba(51, 255, 51, 0.5),
+                0 0 40px rgba(51, 255, 51, 0.25),
+                0 0 60px rgba(51, 255, 51, 0.1),
+                inset 0 0 80px rgba(51, 255, 51, 0.05);
+            text-shadow: 0 0 12px rgba(51, 255, 51, 1);
         }
 
         .label-card .label-line {
             display: flex;
             justify-content: space-between;
-            padding: 2px 0;
+            padding: 3px 0;
+            position: relative;
+            z-index: 3;
+            border-bottom: 1px solid rgba(51, 255, 51, 0.15);
+        }
+
+        .label-card .label-line:last-child {
+            border-bottom: none;
         }
 
         .label-card .label-key {
             font-weight: 600;
+            color: #88ff88;
+            text-transform: uppercase;
+            font-size: 9px;
+            letter-spacing: 0.5px;
         }
 
         .label-card .label-value {
             text-align: right;
+            font-family: 'JetBrains Mono', monospace;
+            color: #33ff33;
         }
 
         .label-card .label-header {
             font-weight: 700;
-            font-size: 11px;
-            border-bottom: 1px dashed var(--label-border);
-            padding-bottom: 6px;
-            margin-bottom: 6px;
+            font-size: 12px;
+            color: #00ff00;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding-bottom: 8px;
+            margin-bottom: 8px;
+            position: relative;
+            z-index: 3;
+            border-bottom: 1px solid #33ff33;
+            text-shadow: 
+                0 0 10px rgba(0, 255, 0, 0.9),
+                0 0 20px rgba(0, 255, 0, 0.5);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Blinking cursor after header */
+        .label-card .label-header::after {
+            content: '█';
+            animation: terminal-blink 1s step-end infinite;
+            font-size: 10px;
+        }
+
+        @keyframes terminal-blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+
+        /* Terminal prompt style for opened/unopened */
+        .label-card .label-line:first-of-type .label-key::before {
+            content: '>';
+            margin-right: 4px;
+            color: #00ff00;
         }
 
         .label-card .remove-btn {
             position: absolute;
-            top: 4px;
-            right: 4px;
+            top: 6px;
+            right: 6px;
             width: 18px;
             height: 18px;
-            background: var(--ctp-red);
-            color: white;
-            border: none;
-            border-radius: 50%;
-            font-size: 12px;
+            background: transparent;
+            color: #ff3333;
+            border: 1px solid #ff3333;
+            border-radius: 2px;
+            font-size: 14px;
+            font-weight: bold;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
             opacity: 0;
             transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
-            box-shadow: 0 2px 8px rgba(243, 139, 168, 0.4);
+            z-index: 10;
+            text-shadow: 0 0 8px rgba(255, 51, 51, 0.8);
+            box-shadow: 0 0 10px rgba(255, 51, 51, 0.3);
         }
 
         .label-card:hover .remove-btn {
             opacity: 1;
-            transform: rotate(90deg);
         }
 
         .label-card .remove-btn:hover {
-            background: var(--ctp-maroon);
-            transform: rotate(90deg) scale(1.3);
-            box-shadow: 0 4px 16px rgba(243, 139, 168, 0.6);
+            background: #ff3333;
+            color: #0a0a0a;
+            transform: scale(1.2);
+            box-shadow: 
+                0 0 15px rgba(255, 51, 51, 0.6),
+                0 0 30px rgba(255, 51, 51, 0.3);
+            text-shadow: none;
         }
 
         .empty-state {

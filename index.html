@@ -491,14 +491,15 @@
         }
 
         .list-item.selected {
-            background: rgba(69, 71, 90, 0.7);
+            opacity: 1;
+            background: rgba(69, 71, 90, 0.85);
             border-color: var(--ctp-lavender);
             color: var(--ctp-lavender);
             box-shadow: 
                 0 0 30px rgba(180, 190, 254, 0.25),
                 0 0 60px rgba(180, 190, 254, 0.1),
                 inset 0 0 20px rgba(180, 190, 254, 0.08);
-            animation: pulse-glow 2s ease-in-out infinite;
+            animation: slideInFromLeft 0.3s ease forwards, pulse-glow 2s ease-in-out 0.3s infinite;
         }
 
         @keyframes pulse-glow {

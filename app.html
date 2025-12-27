@@ -138,6 +138,23 @@
         }
 
         /* ============================================
+           DECEMBER SNOW OVERLAY (10s, non-interactive)
+           ============================================ */
+        .snow-canvas {
+            position: fixed;
+            inset: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 9000;          /* below .noise-overlay (9999), above most UI */
+            pointer-events: none;   /* never blocks clicks */
+            opacity: 0.30;          /* ~30% opaque overlay */
+            transition: opacity 1.6s ease;
+            will-change: opacity;
+        }
+        .snow-canvas.snow-fade {
+            opacity: 0;
+        }
+        /* ============================================
            NOISE/GRAIN TEXTURE OVERLAY
            ============================================ */
         .noise-overlay {
@@ -1392,6 +1409,11 @@
     
     <!-- Noise Texture Overlay -->
     <div class="noise-overlay"></div>
+    <!-- December Snow Overlay (10s, non-interactive) -->
+    <canvas id="snow-canvas" class="snow-canvas" aria-hidden="true"></canvas>
+
+    <!-- Noise Texture Overlay -->
+    <div class="noise-overlay"></div>
     
     <div class="terminal-window">
         <div class="terminal-titlebar">
@@ -1911,10 +1933,162 @@ Clean I & II,CS2500,CA Clean I - On Board;CA Clean II - On Board;CA Clean I - Re
             }
         }
 
+        // ============================================
+        // DECEMBER SNOW OVERLAY (10 seconds only)
+        // ============================================
+        (function () {
+            const SHOW_MS = 10_000;     // show for 10 seconds
+            const FADE_MS = 1_600;      // match CSS transition
+            const MAX_FLAKES = 160;     // keep it light
+
+            function isDecember() {
+                const now = new Date();
+                return now.getMonth() === 11; // 0=Jan ... 11=Dec
+            }
+
+            function reducedMotion() {
+                return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            }
+
+            class SnowOverlay {
+                constructor(canvas) {
+                    this.canvas = canvas;
+                    this.ctx = canvas.getContext('2d', { alpha: true });
+                    this.dpr = Math.max(1, window.devicePixelRatio || 1);
+
+                    this.flakes = [];
+                    this.running = false;
+                    this.startTime = 0;
+                    this.raf = 0;
+
+                    this.onResize = this.onResize.bind(this);
+                    this.tick = this.tick.bind(this);
+                }
+
+                onResize() {
+                    const w = Math.floor(window.innerWidth);
+                    const h = Math.floor(window.innerHeight);
+                    this.canvas.width = Math.floor(w * this.dpr);
+                    this.canvas.height = Math.floor(h * this.dpr);
+                    this.canvas.style.width = w + 'px';
+                    this.canvas.style.height = h + 'px';
+                    this.ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
+                    this.w = w;
+                    this.h = h;
+                }
+
+                spawnFlake() {
+                    const size = 1.2 + Math.random() * 2.2;
+                    const vy = 28 + Math.random() * 55;           // px/sec
+                    const vx = (-10 + Math.random() * 20);        // small drift
+                    return {
+                        x: Math.random() * this.w,
+                        y: -10 - Math.random() * this.h * 0.2,
+                        r: size,
+                        vx,
+                        vy,
+                        wobble: Math.random() * Math.PI * 2,
+                        wobbleSpeed: 0.8 + Math.random() * 1.8,
+                        settled: false
+                    };
+                }
+
+                initFlakes() {
+                    const count = Math.min(MAX_FLAKES, Math.floor((this.w * this.h) / 14000));
+                    this.flakes = [];
+                    for (let i = 0; i < count; i++) {
+                        const f = this.spawnFlake();
+                        f.y = Math.random() * this.h; // start distributed
+                        this.flakes.push(f);
+                    }
+                }
+
+                start() {
+                    this.onResize();
+                    this.initFlakes();
+
+                    this.running = true;
+                    window.addEventListener('resize', this.onResize, { passive: true });
+
+                    setTimeout(() => this.fadeOut(), SHOW_MS);
+
+                    this.lastT = performance.now();
+                    this.raf = requestAnimationFrame(this.tick);
+                }
+
+                fadeOut() {
+                    if (!this.running) return;
+                    this.canvas.classList.add('snow-fade');
+                    setTimeout(() => this.stopAndRemove(), FADE_MS + 50);
+                }
+
+                stopAndRemove() {
+                    this.running = false;
+                    cancelAnimationFrame(this.raf);
+                    window.removeEventListener('resize', this.onResize);
+                    if (this.canvas && this.canvas.parentNode) {
+                        this.canvas.parentNode.removeChild(this.canvas);
+                    }
+                }
+
+                tick(t) {
+                    if (!this.running) return;
+
+                    const dt = Math.min(0.033, (t - this.lastT) / 1000);
+                    this.lastT = t;
+
+                    const ctx = this.ctx;
+                    ctx.clearRect(0, 0, this.w, this.h);
+
+                    for (let i = 0; i < this.flakes.length; i++) {
+                        const f = this.flakes[i];
+
+                        if (!f.settled) {
+                            f.wobble += f.wobbleSpeed * dt;
+                            const wobbleX = Math.sin(f.wobble) * 10;
+
+                            f.x += (f.vx * dt) + wobbleX * dt;
+                            f.y += f.vy * dt;
+
+                            if (f.x < -20) f.x = this.w + 20;
+                            if (f.x > this.w + 20) f.x = -20;
+
+                            const floorY = this.h - f.r - 2;
+                            if (f.y >= floorY) {
+                                f.y = floorY;
+                                f.settled = true;
+                                f.vx = 0;
+                                f.vy = 0;
+                            }
+                        }
+
+                        ctx.beginPath();
+                        ctx.arc(f.x, f.y, f.r, 0, Math.PI * 2);
+                        ctx.fillStyle = 'rgba(255,255,255,0.95)';
+                        ctx.fill();
+                    }
+
+                    this.raf = requestAnimationFrame(this.tick);
+                }
+            }
+
+            document.addEventListener('DOMContentLoaded', () => {
+                if (!isDecember()) return;
+                if (reducedMotion()) return;
+
+                const canvas = document.getElementById('snow-canvas');
+                if (!canvas) return;
+
+                const snow = new SnowOverlay(canvas);
+                snow.start();
+            });
+        })();
+
         // Initialize
         document.addEventListener('DOMContentLoaded', () => {
             window.app = new LabelPrinterApp();
         });
+
     </script>
 </body>
 </html>

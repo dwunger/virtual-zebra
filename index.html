@@ -6,11 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Milky Way Galaxy - ASCII Animation</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             background: #0a0a12;
             display: flex;
@@ -19,9 +15,7 @@
             min-height: 100vh;
             overflow: hidden;
         }
-        canvas {
-            image-rendering: pixelated;
-        }
+        canvas { image-rendering: pixelated; }
         .controls {
             position: fixed;
             bottom: 20px;
@@ -41,28 +35,11 @@
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
 
-        const WIDTH = 220;
-        const HEIGHT = 110;
-        // Smaller character size to match original
+        // Cell size in CSS pixels (keeps your original look)
         const CHAR_W = 3;
         const CHAR_H = 4;
 
-        canvas.width = WIDTH * CHAR_W;
-        canvas.height = HEIGHT * CHAR_H;
-
-        // Smaller font
-        ctx.font = '4px Courier New';
-        ctx.textBaseline = 'top';
-
-        const TOTAL_PIXELS = WIDTH * HEIGHT;
-
-        // --- background density controls (scale with canvas area) ---
-        const BG_STAR_DENSITY_PX = 80;     // ~1 star per N pixels (smaller = more stars)
-        const GALAXY_DENSITY_PX  = 1400;   // ~1 galaxy blob per N pixels (smaller = more blobs)
-
-        const NUM_BG_STARS = Math.max(300, Math.round(TOTAL_PIXELS / BG_STAR_DENSITY_PX));
-        const NUM_GALAXIES = Math.max(18,  Math.round(TOTAL_PIXELS / GALAXY_DENSITY_PX));
-
+        // Character gradient
         const gradient = ' .Â·:;+=xX#@';
         const gradientLen = gradient.length - 1;
 
@@ -118,155 +95,223 @@
             { r: 255, g: 250, b: 240 },
         ]);
 
-        // Galaxy parameters
-        const CORE_RADIUS = 6;
-        const DISK_RADIUS = 85;
-        const DISK_THICKNESS = 4;
-        const NUM_ARMS = 2;
-        const ARM_TIGHTNESS = 0.28;
-        const ARM_WIDTH = 18;
-
-        const stars = [];
-        const dustLanes = [];
-        const nebulaRegions = [];
-        const backgroundStars = [];
-        const distantGalaxies = [];
-
         function seededRandom(seed) {
             const x = Math.sin(seed) * 43758.5453;
             return x - Math.floor(x);
         }
 
-        // Background stars (density-based)
-        for (let i = 0; i < NUM_BG_STARS; i++) {
-            const seed = i * 7.331 + 60000;
-            backgroundStars.push({
-                x: (seededRandom(seed) * WIDTH) | 0,
-                y: (seededRandom(seed + 1) * HEIGHT) | 0,
-                baseBrightness: 0.12 + seededRandom(seed + 2) * 0.55,
-                twinkleSpeed: 0.5 + seededRandom(seed + 3) * 3,
-                twinklePhase: seededRandom(seed + 4) * Math.PI * 2,
-                twinkleAmount: 0.3 + seededRandom(seed + 5) * 0.7
-            });
-        }
+        // ---- dynamic (viewport-based) grid sizing ----
+        let WIDTH = 0;
+        let HEIGHT = 0;
+        let TOTAL_PIXELS = 0;
 
-        // Distant galaxies (density-based)
-        for (let i = 0; i < NUM_GALAXIES; i++) {
-            const seed = i * 11.11 + 70000;
-            distantGalaxies.push({
-                x: (seededRandom(seed) * WIDTH) | 0,
-                y: (seededRandom(seed + 1) * HEIGHT) | 0,
-                size: 1 + ((seededRandom(seed + 2) * 2) | 0),
-                baseBrightness: 0.18 + seededRandom(seed + 3) * 0.32,
-                twinkleSpeed: 0.2 + seededRandom(seed + 4) * 0.5,
-                twinklePhase: seededRandom(seed + 5) * Math.PI * 2
-            });
-        }
+        // Galaxy parameters (recomputed on resize)
+        let CORE_RADIUS = 6;
+        let DISK_RADIUS = 85;
+        let DISK_THICKNESS = 4;
 
-        // Spiral arm stars
-        for (let i = 0; i < 7000; i++) {
-            const seed = i * 1.618;
-            const r = Math.pow(seededRandom(seed), 0.5) * DISK_RADIUS;
-            if (r < CORE_RADIUS * 1.5) continue;
+        const NUM_ARMS = 2;
+        const ARM_TIGHTNESS = 0.28;
+        const ARM_WIDTH = 18;
 
-            const armIndex = (seededRandom(seed + 1) * NUM_ARMS) | 0;
-            const armOffset = (armIndex / NUM_ARMS) * Math.PI * 2;
-            const spiralAngle = armOffset + r * ARM_TIGHTNESS;
-            const scatter = (seededRandom(seed + 2) - 0.5) * ARM_WIDTH * (1 + r / DISK_RADIUS);
-            const theta = spiralAngle + scatter / (r + 10);
+        // Scene arrays (rebuilt on resize)
+        let stars = [];
+        let dustLanes = [];
+        let nebulaRegions = [];
+        let backgroundStars = [];
+        let distantGalaxies = [];
 
-            let brightness = 0.3 + seededRandom(seed + 4) * 0.7;
-            brightness *= 0.5 + Math.abs(Math.sin((theta - armOffset) * NUM_ARMS)) * 0.5;
-            brightness *= 1 - (r / DISK_RADIUS) * 0.5;
+        // Buffers (rebuilt on resize)
+        let brightBuffer, typeBuffer, nebulaBuffer, coreBuffer, dustBuffer, bgBuffer;
 
-            stars.push({
-                x: r * Math.cos(theta),
-                y: (seededRandom(seed + 3) - 0.5) * DISK_THICKNESS * (1 - r / DISK_RADIUS * 0.7),
-                z: r * Math.sin(theta),
-                brightness,
-                size: seededRandom(seed + 5),
-                type: 0
-            });
-        }
-
-        // Accretion + core stars
-        for (let i = 0; i < 500; i++) {
-            const seed = i * 2.236 + 50000;
-            const r = CORE_RADIUS * 0.4 + seededRandom(seed) * CORE_RADIUS * 0.8;
-            const theta = seededRandom(seed + 1) * Math.PI * 2;
-            stars.push({
-                x: r * Math.cos(theta),
-                y: (seededRandom(seed + 2) - 0.5) * 0.5,
-                z: r * Math.sin(theta),
-                brightness: 0.9 + seededRandom(seed + 3) * 0.1,
-                size: seededRandom(seed + 4),
-                type: 2
-            });
-        }
-
-        for (let i = 0; i < 1800; i++) {
-            const seed = i * 2.718 + 10000;
-            const r = CORE_RADIUS * 1.2 + Math.pow(seededRandom(seed), 1.5) * CORE_RADIUS * 3;
-            const theta = seededRandom(seed + 1) * Math.PI * 2;
-            const phi = (seededRandom(seed + 2) - 0.5) * Math.PI;
-            stars.push({
-                x: r * Math.cos(theta) * Math.cos(phi),
-                y: r * Math.sin(phi) * 0.5,
-                z: r * Math.sin(theta) * Math.cos(phi),
-                brightness: (0.5 + seededRandom(seed + 3) * 0.4) * 1.1,
-                size: seededRandom(seed + 4),
-                type: 1
-            });
-        }
-
-        // Dust lanes
-        for (let i = 0; i < 1500; i++) {
-            const seed = i * 3.14 + 20000;
-            const r = seededRandom(seed) * DISK_RADIUS * 0.85 + CORE_RADIUS * 2;
-            const armIndex = (seededRandom(seed + 1) * NUM_ARMS) | 0;
-            const armOffset = (armIndex / NUM_ARMS) * Math.PI * 2;
-            const theta = armOffset + r * ARM_TIGHTNESS - 0.18 + (seededRandom(seed + 2) - 0.5) * 0.2;
-            dustLanes.push({
-                x: r * Math.cos(theta),
-                y: (seededRandom(seed + 3) - 0.5) * DISK_THICKNESS * 0.3,
-                z: r * Math.sin(theta),
-                opacity: 0.3 + seededRandom(seed + 4) * 0.4
-            });
-        }
-
-        // Nebulae
-        for (let i = 0; i < 100; i++) {
-            const seed = i * 1.414 + 30000;
-            const r = seededRandom(seed) * DISK_RADIUS * 0.65 + 18;
-            const armIndex = (seededRandom(seed + 1) * NUM_ARMS) | 0;
-            const armOffset = (armIndex / NUM_ARMS) * Math.PI * 2;
-            const theta = armOffset + r * ARM_TIGHTNESS + (seededRandom(seed + 2) - 0.5) * 0.12;
-            nebulaRegions.push({
-                x: r * Math.cos(theta),
-                y: (seededRandom(seed + 3) - 0.5) * DISK_THICKNESS * 0.2,
-                z: r * Math.sin(theta),
-                radius: 2 + seededRandom(seed + 4) * 3,
-                brightness: 0.6 + seededRandom(seed + 5) * 0.3
-            });
-        }
-
-        // Buffers
-        const brightBuffer = new Float32Array(TOTAL_PIXELS);
-        const typeBuffer = new Uint8Array(TOTAL_PIXELS);
-        const nebulaBuffer = new Float32Array(TOTAL_PIXELS);
-        const coreBuffer = new Float32Array(TOTAL_PIXELS);
-        const dustBuffer = new Float32Array(TOTAL_PIXELS);
-        const bgBuffer = new Float32Array(TOTAL_PIXELS);
-
-        let frame = 0;
-        const TOTAL_FRAMES = 80;
-        const centerX = WIDTH / 2;
-        const centerY = HEIGHT / 2;
+        // Render constants (recomputed on resize)
+        let centerX = 0;
+        let centerY = 0;
         const invAspect = 0.5;
-        const invDiskRadius2 = 1 / (DISK_RADIUS * 2);
+        let invDiskRadius2 = 1 / (DISK_RADIUS * 2);
+
         const tiltAngle = 0.35;
         const cosTilt = Math.cos(tiltAngle);
         const sinTilt = Math.sin(tiltAngle);
+
+        // Background densities (scale with TOTAL_PIXELS)
+        const BG_STAR_DENSITY_PX = 80;    // lower => more stars
+        const GALAXY_DENSITY_PX  = 1400;  // lower => more galaxy blobs
+
+        function resizeCanvasToViewport() {
+            // Size the ASCII grid to the available viewport
+            const cols = Math.max(40, Math.floor(window.innerWidth / CHAR_W));
+            const rows = Math.max(20, Math.floor(window.innerHeight / CHAR_H));
+
+            WIDTH = cols;
+            HEIGHT = rows;
+            TOTAL_PIXELS = WIDTH * HEIGHT;
+
+            // Canvas pixels (use devicePixelRatio, but keep coordinates in CSS pixels)
+            const dpr = window.devicePixelRatio || 1;
+            canvas.style.width = (WIDTH * CHAR_W) + "px";
+            canvas.style.height = (HEIGHT * CHAR_H) + "px";
+            canvas.width = Math.floor(WIDTH * CHAR_W * dpr);
+            canvas.height = Math.floor(HEIGHT * CHAR_H * dpr);
+
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            ctx.font = '4px Courier New';
+            ctx.textBaseline = 'top';
+
+            centerX = WIDTH / 2;
+            centerY = HEIGHT / 2;
+
+            // Scale galaxy to the available grid
+            const minDim = Math.min(WIDTH, HEIGHT);
+            DISK_RADIUS = Math.max(40, minDim * 0.38);
+            CORE_RADIUS = Math.max(4, DISK_RADIUS * 0.07);
+            DISK_THICKNESS = Math.max(3, DISK_RADIUS * 0.05);
+
+            invDiskRadius2 = 1 / (DISK_RADIUS * 2);
+
+            // Rebuild buffers
+            brightBuffer = new Float32Array(TOTAL_PIXELS);
+            typeBuffer = new Uint8Array(TOTAL_PIXELS);
+            nebulaBuffer = new Float32Array(TOTAL_PIXELS);
+            coreBuffer = new Float32Array(TOTAL_PIXELS);
+            dustBuffer = new Float32Array(TOTAL_PIXELS);
+            bgBuffer = new Float32Array(TOTAL_PIXELS);
+        }
+
+        function rebuildScene() {
+            stars = [];
+            dustLanes = [];
+            nebulaRegions = [];
+            backgroundStars = [];
+            distantGalaxies = [];
+
+            // Background counts derived from TOTAL_PIXELS (THIS is what makes it fill)
+            const NUM_BG_STARS = Math.max(300, Math.round(TOTAL_PIXELS / BG_STAR_DENSITY_PX));
+            const NUM_GALAXIES = Math.max(18,  Math.round(TOTAL_PIXELS / GALAXY_DENSITY_PX));
+
+            // Background stars
+            for (let i = 0; i < NUM_BG_STARS; i++) {
+                const seed = i * 7.331 + 60000;
+                backgroundStars.push({
+                    x: (seededRandom(seed) * WIDTH) | 0,
+                    y: (seededRandom(seed + 1) * HEIGHT) | 0,
+                    baseBrightness: 0.12 + seededRandom(seed + 2) * 0.55,
+                    twinkleSpeed: 0.5 + seededRandom(seed + 3) * 3,
+                    twinklePhase: seededRandom(seed + 4) * Math.PI * 2,
+                    twinkleAmount: 0.3 + seededRandom(seed + 5) * 0.7
+                });
+            }
+
+            // Distant galaxies
+            for (let i = 0; i < NUM_GALAXIES; i++) {
+                const seed = i * 11.11 + 70000;
+                distantGalaxies.push({
+                    x: (seededRandom(seed) * WIDTH) | 0,
+                    y: (seededRandom(seed + 1) * HEIGHT) | 0,
+                    size: 1 + ((seededRandom(seed + 2) * 2) | 0),
+                    baseBrightness: 0.18 + seededRandom(seed + 3) * 0.32,
+                    twinkleSpeed: 0.2 + seededRandom(seed + 4) * 0.5,
+                    twinklePhase: seededRandom(seed + 5) * Math.PI * 2
+                });
+            }
+
+            // Scale foreground detail with galaxy size (keeps look consistent on big screens)
+            const scale = Math.max(0.7, Math.min(3.0, (DISK_RADIUS / 85) * (DISK_RADIUS / 85)));
+            const NUM_ARM_STARS = Math.round(7000 * scale);
+            const NUM_DUST = Math.round(1500 * scale);
+            const NUM_NEBULA = Math.round(100 * Math.sqrt(scale));
+
+            // Spiral arm stars
+            for (let i = 0; i < NUM_ARM_STARS; i++) {
+                const seed = i * 1.618;
+                const r = Math.pow(seededRandom(seed), 0.5) * DISK_RADIUS;
+                if (r < CORE_RADIUS * 1.5) continue;
+
+                const armIndex = (seededRandom(seed + 1) * NUM_ARMS) | 0;
+                const armOffset = (armIndex / NUM_ARMS) * Math.PI * 2;
+                const spiralAngle = armOffset + r * ARM_TIGHTNESS;
+                const scatter = (seededRandom(seed + 2) - 0.5) * ARM_WIDTH * (1 + r / DISK_RADIUS);
+                const theta = spiralAngle + scatter / (r + 10);
+
+                let brightness = 0.3 + seededRandom(seed + 4) * 0.7;
+                brightness *= 0.5 + Math.abs(Math.sin((theta - armOffset) * NUM_ARMS)) * 0.5;
+                brightness *= 1 - (r / DISK_RADIUS) * 0.5;
+
+                stars.push({
+                    x: r * Math.cos(theta),
+                    y: (seededRandom(seed + 3) - 0.5) * DISK_THICKNESS * (1 - r / DISK_RADIUS * 0.7),
+                    z: r * Math.sin(theta),
+                    brightness,
+                    size: seededRandom(seed + 5),
+                    type: 0
+                });
+            }
+
+            // Accretion + core stars (keep roughly constant-ish)
+            for (let i = 0; i < 500; i++) {
+                const seed = i * 2.236 + 50000;
+                const r = CORE_RADIUS * 0.4 + seededRandom(seed) * CORE_RADIUS * 0.8;
+                const theta = seededRandom(seed + 1) * Math.PI * 2;
+                stars.push({
+                    x: r * Math.cos(theta),
+                    y: (seededRandom(seed + 2) - 0.5) * 0.5,
+                    z: r * Math.sin(theta),
+                    brightness: 0.9 + seededRandom(seed + 3) * 0.1,
+                    size: seededRandom(seed + 4),
+                    type: 2
+                });
+            }
+
+            for (let i = 0; i < 1800; i++) {
+                const seed = i * 2.718 + 10000;
+                const r = CORE_RADIUS * 1.2 + Math.pow(seededRandom(seed), 1.5) * CORE_RADIUS * 3;
+                const theta = seededRandom(seed + 1) * Math.PI * 2;
+                const phi = (seededRandom(seed + 2) - 0.5) * Math.PI;
+                stars.push({
+                    x: r * Math.cos(theta) * Math.cos(phi),
+                    y: r * Math.sin(phi) * 0.5,
+                    z: r * Math.sin(theta) * Math.cos(phi),
+                    brightness: (0.5 + seededRandom(seed + 3) * 0.4) * 1.1,
+                    size: seededRandom(seed + 4),
+                    type: 1
+                });
+            }
+
+            // Dust lanes
+            for (let i = 0; i < NUM_DUST; i++) {
+                const seed = i * 3.14 + 20000;
+                const r = seededRandom(seed) * DISK_RADIUS * 0.85 + CORE_RADIUS * 2;
+                const armIndex = (seededRandom(seed + 1) * NUM_ARMS) | 0;
+                const armOffset = (armIndex / NUM_ARMS) * Math.PI * 2;
+                const theta = armOffset + r * ARM_TIGHTNESS - 0.18 + (seededRandom(seed + 2) - 0.5) * 0.2;
+                dustLanes.push({
+                    x: r * Math.cos(theta),
+                    y: (seededRandom(seed + 3) - 0.5) * DISK_THICKNESS * 0.3,
+                    z: r * Math.sin(theta),
+                    opacity: 0.3 + seededRandom(seed + 4) * 0.4
+                });
+            }
+
+            // Nebulae
+            for (let i = 0; i < NUM_NEBULA; i++) {
+                const seed = i * 1.414 + 30000;
+                const r = seededRandom(seed) * DISK_RADIUS * 0.65 + 18;
+                const armIndex = (seededRandom(seed + 1) * NUM_ARMS) | 0;
+                const armOffset = (armIndex / NUM_ARMS) * Math.PI * 2;
+                const theta = armOffset + r * ARM_TIGHTNESS + (seededRandom(seed + 2) - 0.5) * 0.12;
+                nebulaRegions.push({
+                    x: r * Math.cos(theta),
+                    y: (seededRandom(seed + 3) - 0.5) * DISK_THICKNESS * 0.2,
+                    z: r * Math.sin(theta),
+                    radius: 2 + seededRandom(seed + 4) * 3,
+                    brightness: 0.6 + seededRandom(seed + 5) * 0.3
+                });
+            }
+        }
+
+        // ---- animation ----
+        let frame = 0;
+        const TOTAL_FRAMES = 130;
 
         function render() {
             const orbitAngle = (frame / TOTAL_FRAMES) * Math.PI;
@@ -333,8 +378,10 @@
                 const rz = n.y * sinTilt + rz1 * cosTilt;
                 const sx = centerX + rx, sy = centerY - ry * invAspect;
                 const radius = n.radius * (1 + rz / 200);
-                for (let dy = (-radius | 0); dy <= (radius | 0); dy++) {
-                    for (let dx = (-radius | 0); dx <= (radius | 0); dx++) {
+                const rInt = radius | 0;
+
+                for (let dy = -rInt; dy <= rInt; dy++) {
+                    for (let dx = -rInt; dx <= rInt; dx++) {
                         const distSq = dx * dx + dy * dy;
                         if (distSq <= radius * radius) {
                             const px = (sx + dx) | 0, py = (sy + dy * invAspect) | 0;
@@ -366,16 +413,21 @@
                 }
             }
 
-            // Black hole
-            for (let dy = -18; dy <= 18; dy++) {
-                for (let dx = -18; dx <= 18; dx++) {
+            // Black hole (scaled with disk so it stays proportional)
+            const bhOuter = Math.max(14, (DISK_RADIUS * 0.22) | 0);
+            const bhInner = Math.max(2, (bhOuter * 0.12) | 0);
+
+            for (let dy = -bhOuter; dy <= bhOuter; dy++) {
+                for (let dx = -bhOuter; dx <= bhOuter; dx++) {
                     const dist = Math.sqrt(dx * dx + dy * dy * 4);
-                    if (dist < 18 && dist > 2) {
+                    if (dist < bhOuter && dist > bhInner) {
                         const px = (centerX + dx) | 0, py = (centerY + dy) | 0;
                         if (px >= 0 && px < WIDTH && py >= 0 && py < HEIGHT) {
-                            let glow = dist < 5 ? 2.0 * (1 - (dist - 2) / 3) :
-                                       dist < 10 ? 1.2 * Math.pow(1 - (dist - 5) / 5, 1.5) :
-                                       0.6 * Math.pow(1 - (dist - 10) / 8, 2);
+                            let glow =
+                                dist < (bhInner + 3) ? 2.0 * (1 - (dist - bhInner) / 3) :
+                                dist < (bhInner + 8) ? 1.2 * Math.pow(1 - (dist - (bhInner + 3)) / 5, 1.5) :
+                                0.6 * Math.pow(1 - (dist - (bhInner + 8)) / Math.max(6, bhOuter - (bhInner + 8)), 2);
+
                             const idx = py * WIDTH + px;
                             coreBuffer[idx] += glow;
                             typeBuffer[idx] = 3;
@@ -383,19 +435,23 @@
                     }
                 }
             }
-            for (let dy = -2; dy <= 2; dy++) {
-                for (let dx = -2; dx <= 2; dx++) {
-                    if (dx * dx + dy * dy * 4 < 4) {
-                        const idx = ((centerY + dy) | 0) * WIDTH + ((centerX + dx) | 0);
-                        brightBuffer[idx] *= 0.1;
-                        coreBuffer[idx] *= 0.1;
+
+            for (let dy = -bhInner; dy <= bhInner; dy++) {
+                for (let dx = -bhInner; dx <= bhInner; dx++) {
+                    if (dx * dx + dy * dy * 4 < (bhInner * bhInner)) {
+                        const px = (centerX + dx) | 0, py = (centerY + dy) | 0;
+                        if (px >= 0 && px < WIDTH && py >= 0 && py < HEIGHT) {
+                            const idx = py * WIDTH + px;
+                            brightBuffer[idx] *= 0.1;
+                            coreBuffer[idx] *= 0.1;
+                        }
                     }
                 }
             }
 
             // Render to canvas
             ctx.fillStyle = '#0a0a12';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillRect(0, 0, WIDTH * CHAR_W, HEIGHT * CHAR_H);
 
             for (let y = 0; y < HEIGHT; y++) {
                 for (let x = 0; x < WIDTH; x++) {
@@ -427,20 +483,26 @@
             frame++;
 
             if (frame >= TOTAL_FRAMES) {
-                // Fade out
                 document.body.style.transition = "opacity 0.6s ease";
                 document.body.style.opacity = "0";
-
-                // Redirect after fade
-                setTimeout(() => {
-                    window.location.href = "app.html";
-                }, 600);
-
+                setTimeout(() => { window.location.href = "app.html"; }, 600);
                 return;
             }
 
             requestAnimationFrame(render);
         }
+
+        function init() {
+            resizeCanvasToViewport();
+            rebuildScene();
+        }
+
+        // Build once, and keep it filling the viewport on resize
+        init();
+        window.addEventListener('resize', () => {
+            // If you don't want rebuilding during resize drags, debounce this.
+            init();
+        }, { passive: true });
 
         render();
     </script>

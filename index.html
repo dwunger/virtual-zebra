@@ -1,0 +1,949 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lab Materials Label Printer</title>
+    <style>
+        /* Lab Materials Label Printer - Industrial/Utilitarian Design */
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
+
+        :root {
+            --bg-dark: #1a1d21;
+            --bg-panel: #252930;
+            --bg-item: #2d323a;
+            --bg-item-hover: #363c47;
+            --bg-item-selected: #3d4654;
+            --border-color: #404854;
+            --border-accent: #5a6473;
+            --text-primary: #e8eaed;
+            --text-secondary: #9aa0a9;
+            --text-muted: #6b7280;
+            --accent-blue: #4a9eff;
+            --accent-green: #34d399;
+            --accent-amber: #fbbf24;
+            --accent-red: #f87171;
+            --label-bg: #fefce8;
+            --label-text: #1c1917;
+            --label-border: #292524;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            height: 100%;
+            font-family: 'IBM Plex Sans', sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-primary);
+        }
+
+        .container {
+            display: grid;
+            grid-template-columns: 200px 1fr 280px;
+            grid-template-rows: auto 1fr 70px;
+            height: 100vh;
+            gap: 1px;
+            background: var(--border-color);
+        }
+
+        .panel {
+            background: var(--bg-panel);
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel-header {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--text-secondary);
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 10px;
+        }
+
+        .panel-header .count {
+            color: var(--text-muted);
+            font-weight: 400;
+        }
+
+        .top-left {
+            grid-column: 1;
+            grid-row: 1;
+        }
+
+        .middle-left {
+            grid-column: 1;
+            grid-row: 2;
+            overflow-y: auto;
+        }
+
+        .center {
+            grid-column: 2;
+            grid-row: 1 / 3;
+            overflow-y: auto;
+        }
+
+        .right {
+            grid-column: 3;
+            grid-row: 1 / 3;
+            overflow-y: auto;
+        }
+
+        .bottom-left {
+            grid-column: 1 / 3;
+            grid-row: 3;
+            flex-direction: row;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .bottom-right {
+            grid-column: 3;
+            grid-row: 3;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .list-container {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .list-item {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            padding: 10px 12px;
+            background: var(--bg-item);
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            border: 1px solid transparent;
+        }
+
+        .list-item:hover {
+            background: var(--bg-item-hover);
+        }
+
+        .list-item.selected {
+            background: var(--bg-item-selected);
+            border-color: var(--accent-blue);
+            color: var(--accent-blue);
+        }
+
+        .material-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 8px;
+            flex: 1;
+            align-content: start;
+        }
+
+        .material-item {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            padding: 12px;
+            background: var(--bg-item);
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            border: 2px solid transparent;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .material-item:hover {
+            background: var(--bg-item-hover);
+            transform: translateY(-1px);
+        }
+
+        .material-item.selected {
+            background: var(--bg-item-selected);
+            border-color: var(--accent-green);
+        }
+
+        .material-name {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .material-meta {
+            font-size: 10px;
+            color: var(--text-muted);
+        }
+
+        .material-meta span {
+            display: inline-block;
+            padding: 2px 6px;
+            background: var(--bg-dark);
+            border-radius: 3px;
+            margin-right: 4px;
+        }
+
+        .btn {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            font-weight: 600;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn-primary {
+            background: var(--accent-blue);
+            color: var(--bg-dark);
+        }
+
+        .btn-primary:hover {
+            background: #5eaaff;
+            transform: translateY(-1px);
+        }
+
+        .btn-primary:disabled {
+            background: var(--bg-item);
+            color: var(--text-muted);
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: var(--bg-item);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-item-hover);
+        }
+
+        .btn-danger {
+            background: var(--accent-red);
+            color: var(--bg-dark);
+        }
+
+        .btn-danger:hover {
+            background: #fb8a8a;
+        }
+
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .toggle-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 56px;
+            height: 28px;
+            background: var(--bg-item);
+            border-radius: 14px;
+            cursor: pointer;
+            transition: background 0.2s ease;
+            border: 1px solid var(--border-color);
+        }
+
+        .toggle-switch.active {
+            background: var(--accent-green);
+            border-color: var(--accent-green);
+        }
+
+        .toggle-switch::after {
+            content: '';
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 20px;
+            height: 20px;
+            background: var(--text-primary);
+            border-radius: 50%;
+            transition: transform 0.2s ease;
+        }
+
+        .toggle-switch.active::after {
+            transform: translateX(28px);
+            background: var(--bg-dark);
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            padding: 10px 16px;
+            background: var(--bg-item);
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--text-muted);
+        }
+
+        .status-indicator.opened .status-dot {
+            background: var(--accent-green);
+            box-shadow: 0 0 8px var(--accent-green);
+        }
+
+        .status-indicator.unopened .status-dot {
+            background: var(--accent-amber);
+            box-shadow: 0 0 8px var(--accent-amber);
+        }
+
+        .spool-container {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .label-card {
+            background: var(--label-bg);
+            color: var(--label-text);
+            border: 2px solid var(--label-border);
+            border-radius: 4px;
+            padding: 10px 12px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            line-height: 1.6;
+            position: relative;
+            animation: slideIn 0.2s ease;
+        }
+
+        .label-card .label-line {
+            display: flex;
+            justify-content: space-between;
+            padding: 2px 0;
+        }
+
+        .label-card .label-key {
+            font-weight: 600;
+        }
+
+        .label-card .label-value {
+            text-align: right;
+        }
+
+        .label-card .label-header {
+            font-weight: 700;
+            font-size: 11px;
+            border-bottom: 1px dashed var(--label-border);
+            padding-bottom: 6px;
+            margin-bottom: 6px;
+        }
+
+        .label-card .remove-btn {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            width: 18px;
+            height: 18px;
+            background: var(--accent-red);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            font-size: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.15s ease;
+        }
+
+        .label-card:hover .remove-btn {
+            opacity: 1;
+        }
+
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: var(--text-muted);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .empty-state-icon {
+            font-size: 32px;
+            margin-bottom: 12px;
+            opacity: 0.5;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-dark);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--border-accent);
+        }
+
+        .flex-spacer {
+            flex: 1;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 8px;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .selection-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 20px;
+            height: 20px;
+            padding: 0 6px;
+            background: var(--bg-dark);
+            color: var(--text-primary);
+            border-radius: 10px;
+            font-size: 10px;
+            font-weight: 700;
+            margin-left: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="panel top-left">
+            <div class="panel-header" id="instrument-header">Instruments</div>
+            <div class="list-container" id="instrument-list">
+                <div class="empty-state">
+                    <div class="empty-state-icon">⏳</div>
+                    Loading...
+                </div>
+            </div>
+        </div>
+
+        <div class="panel middle-left">
+            <div class="panel-header" id="group-header">Material Groups</div>
+            <div class="list-container" id="group-list">
+                <div class="empty-state">
+                    <div class="empty-state-icon">📋</div>
+                    Select an instrument
+                </div>
+            </div>
+        </div>
+
+        <div class="panel center">
+            <div class="panel-header" id="material-header">Materials</div>
+            <div class="material-grid" id="material-grid">
+                <div class="empty-state">
+                    <div class="empty-state-icon">🧪</div>
+                    Select an instrument to view materials
+                </div>
+            </div>
+        </div>
+
+        <div class="panel right">
+            <div class="panel-header" id="spool-header">Label Spool</div>
+            <div class="spool-container" id="spool-container">
+                <div class="empty-state">
+                    <div class="empty-state-icon">🏷️</div>
+                    No labels printed yet
+                </div>
+            </div>
+        </div>
+
+        <div class="panel bottom-left">
+            <div class="toggle-container">
+                <span class="toggle-label">Open Status:</span>
+                <div class="toggle-switch" id="open-toggle"></div>
+            </div>
+            
+            <div class="flex-spacer"></div>
+            
+            <div class="button-group">
+                <button class="btn btn-secondary" id="clear-selection-btn" style="display: none;">
+                    Clear Selection
+                </button>
+                <button class="btn btn-primary" id="print-btn" disabled>
+                    Print Labels
+                </button>
+            </div>
+            
+            <button class="btn btn-danger" id="clear-spool-btn" style="display: none;">
+                Clear Spool
+            </button>
+        </div>
+
+        <div class="panel bottom-right">
+            <div class="status-indicator unopened" id="status-indicator">
+                <div class="status-dot"></div>
+                <span>Printing as: <strong id="status-text">UNOPENED</strong></span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Embedded CSV Data
+        const CSV_DATA = `Material Group,Instrument,Materials,Preparation,Expiration Days
+Biorad Unassayed,DxC,RAD1;RAD2,Thawed,6;6
+Immunoassay Plus,DxI,BR1;BR2;BR3,Thawed,4;4;4
+Immunoassay Plus,DxC,BR1;BR2;BR3,Thawed,4;4;4
+Cardiac Markers,DxI,CARD1;CARD2;CARD3;CARD1C,Thawed,5;5;5;5
+Techno,DxI,Techno,Thaw&open,7
+HDL Lipids,DxC,HDL1;HDL2,Thawed,14;14
+Pediatric,DxC,PED1;PED2,Thaw&open,7;7
+EtOH/Ammonia,DxC,EAC1;EAC2;EAC3,Opened,20;20;20
+Spinal Fluid,DxC,CSF1;CSF2,Opened,30;30
+Immunology,DxC,IMM1;IMM2;IMM3,Opened,30;30;30
+Specialty Immunoassay,DxI,SP1;SP2;SP3,Thawed,7;7;7
+Specialty Immunoassay Plus,DxI,SPIA1;SPIA2;SPIA3;SPIA LOW,Thawed,14;14;14;14
+Tumor Marker,DxI,TM1;TM2;TM3,Thaw&open,10;10;10
+Tumor Marker,DxI,TM4;TM5;TM6,Thaw&open,10;10;10
+Lyphochek Specialty,DxI,LYSP1;LYPS2;LYSP3,Reconstituted,3;3;3
+Urine,DxC,UR1;UR2;URMA1;URMA2;URNEG;URPOS;BRS1E;BRS2E,Opened,30;30;90;90;60;30;30;30
+BHB,DxC,BHBLOW;BHBHIGH,Opened,60;60
+PT-INR Reagents,CS2500,Innovin - On Board;Innovin - Refrigerated,Reconstituted,3;10
+aPTT Reagents,CS2500,Actin FSL - On Board;CaCl - On Board;Actin FSL - Refrigerated;CaCl - Refrigerated,Opened,3;3;7;56
+D-Dimer Latex,CS2500,D-Dimer Rgt - On Board;D-Dimer Rgt - Refrigerated,Reconstituted,5;28
+D-Dimer Reagent,CS2500,D-Dimer Suppl - On Board;D-Dimer Suppl - Refrigerated;D-Dimer Dil - On Board;D-Dimer Dil - Refrigerated;D-Dimer Buf - On Board;D-Dimer Buf - Refrigerated,Opened,5;28;5;28;5;28
+D-Dimer Controls,CS2500,D-Dimer Ctrl - On Board;D-Dimer Ctrl - Refrigerated,Reconstituted,5;7
+Thrombin Reagent,CS2500,Thrombin - On Board;Thrombin - Refrigerated,Reconstituted,3;5
+OVB Reagent,CS2500,OVB - On Board;OVB - Refrigerated,Opened,1;56
+Fibrinogen Control,CS2500,Abnormal Fibrinogen Ctrl,Reconstituted,1
+Citrols,CS2500,Citrol 1 - On Board;Citrol 3 - On Board,Reconstituted,1;1
+Clean I & II,CS2500,CA Clean I - On Board;CA Clean II - On Board;CA Clean I - Refrigerated;CA Clean II - Room Temp,Opened,5;5;30;60`;
+
+        // Data Management
+        class MaterialData {
+            constructor() {
+                this.instruments = new Set();
+                this.materialsByInstrument = new Map();
+                this.groupsByInstrument = new Map();
+            }
+
+            loadCSVText(csvText) {
+                const lines = csvText.trim().split('\n');
+                for (let i = 1; i < lines.length; i++) {
+                    const line = lines[i].trim();
+                    if (!line) continue;
+
+                    const parts = this.parseCSVLine(line);
+                    if (parts.length < 5) continue;
+
+                    const [group, instrument, materialsStr, preparation, expirationStr] = parts;
+                    const materials = materialsStr.split(';').map(m => m.trim());
+                    const expirations = expirationStr.split(';').map(e => parseInt(e.trim(), 10));
+
+                    this.instruments.add(instrument);
+
+                    if (!this.groupsByInstrument.has(instrument)) {
+                        this.groupsByInstrument.set(instrument, new Set());
+                    }
+                    if (!this.materialsByInstrument.has(instrument)) {
+                        this.materialsByInstrument.set(instrument, new Map());
+                    }
+
+                    this.groupsByInstrument.get(instrument).add(group);
+
+                    const instrumentMaterials = this.materialsByInstrument.get(instrument);
+                    if (!instrumentMaterials.has(group)) {
+                        instrumentMaterials.set(group, []);
+                    }
+
+                    materials.forEach((material, idx) => {
+                        instrumentMaterials.get(group).push({
+                            name: material,
+                            group: group,
+                            instrument: instrument,
+                            preparation: preparation,
+                            expirationDays: expirations[idx] || expirations[0]
+                        });
+                    });
+                }
+            }
+
+            parseCSVLine(line) {
+                const result = [];
+                let current = '';
+                let inQuotes = false;
+                for (let i = 0; i < line.length; i++) {
+                    const char = line[i];
+                    if (char === '"') {
+                        inQuotes = !inQuotes;
+                    } else if (char === ',' && !inQuotes) {
+                        result.push(current.trim());
+                        current = '';
+                    } else {
+                        current += char;
+                    }
+                }
+                result.push(current.trim());
+                return result;
+            }
+
+            getInstruments() {
+                return Array.from(this.instruments).sort();
+            }
+
+            getGroupsForInstrument(instrument) {
+                const groups = this.groupsByInstrument.get(instrument);
+                return groups ? Array.from(groups).sort() : [];
+            }
+
+            getMaterialsForGroup(instrument, group) {
+                const instrumentMaterials = this.materialsByInstrument.get(instrument);
+                if (!instrumentMaterials) return [];
+                const materials = instrumentMaterials.get(group);
+                return materials ? [...materials] : [];
+            }
+
+            getAllMaterialsForInstrument(instrument) {
+                const instrumentMaterials = this.materialsByInstrument.get(instrument);
+                if (!instrumentMaterials) return [];
+                const allMaterials = [];
+                for (const materials of instrumentMaterials.values()) {
+                    allMaterials.push(...materials);
+                }
+                return allMaterials;
+            }
+        }
+
+        // Label Utilities
+        function formatMilitaryTime(date) {
+            return String(date.getHours()).padStart(2, '0') + ':' + String(date.getMinutes()).padStart(2, '0');
+        }
+
+        function formatDate(date) {
+            return String(date.getMonth() + 1).padStart(2, '0') + '/' + 
+                   String(date.getDate()).padStart(2, '0') + '/' + 
+                   date.getFullYear();
+        }
+
+        function formatDateTime(date) {
+            return formatDate(date) + ' ' + formatMilitaryTime(date);
+        }
+
+        function addDays(date, days) {
+            const result = new Date(date);
+            result.setDate(result.getDate() + days);
+            return result;
+        }
+
+        function generateLabel(material, isOpened) {
+            const now = new Date();
+            const preparation = material.preparation;
+            const preparationRequiresOpen = preparation.toLowerCase() === 'opened';
+            const showExpiration = !preparationRequiresOpen || isOpened;
+            
+            return {
+                materialName: material.name,
+                group: material.group,
+                instrument: material.instrument,
+                isOpened: isOpened,
+                openedDateTime: isOpened ? formatDateTime(now) : null,
+                preparation: preparation,
+                preparedDateTime: formatDateTime(now),
+                expirationDateTime: showExpiration ? formatDateTime(addDays(now, material.expirationDays)) : null,
+                expirationDays: material.expirationDays
+            };
+        }
+
+        // Main Application
+        class LabelPrinterApp {
+            constructor() {
+                this.data = new MaterialData();
+                this.selectedInstrument = null;
+                this.selectedGroup = null;
+                this.selectedMaterials = new Set();
+                this.labelSpool = [];
+                this.isOpenedMode = false;
+                this.currentMaterials = [];
+                this.init();
+            }
+
+            init() {
+                this.data.loadCSVText(CSV_DATA);
+                this.cacheElements();
+                this.bindEvents();
+                this.renderInstruments();
+                this.updateUI();
+            }
+
+            cacheElements() {
+                this.instrumentList = document.getElementById('instrument-list');
+                this.groupList = document.getElementById('group-list');
+                this.materialGrid = document.getElementById('material-grid');
+                this.spoolContainer = document.getElementById('spool-container');
+                this.instrumentHeader = document.getElementById('instrument-header');
+                this.groupHeader = document.getElementById('group-header');
+                this.materialHeader = document.getElementById('material-header');
+                this.spoolHeader = document.getElementById('spool-header');
+                this.printBtn = document.getElementById('print-btn');
+                this.clearSelectionBtn = document.getElementById('clear-selection-btn');
+                this.clearSpoolBtn = document.getElementById('clear-spool-btn');
+                this.openToggle = document.getElementById('open-toggle');
+                this.statusIndicator = document.getElementById('status-indicator');
+                this.statusText = document.getElementById('status-text');
+            }
+
+            bindEvents() {
+                this.openToggle.addEventListener('click', () => {
+                    this.isOpenedMode = !this.isOpenedMode;
+                    this.updateToggleUI();
+                });
+                this.printBtn.addEventListener('click', () => this.printSelectedMaterials());
+                this.clearSelectionBtn.addEventListener('click', () => this.clearSelection());
+                this.clearSpoolBtn.addEventListener('click', () => this.clearSpool());
+            }
+
+            renderInstruments() {
+                const instruments = this.data.getInstruments();
+                this.instrumentList.innerHTML = instruments.map(inst => 
+                    `<div class="list-item" data-instrument="${inst}">${inst}</div>`
+                ).join('');
+
+                this.instrumentList.querySelectorAll('.list-item').forEach(item => {
+                    item.addEventListener('click', () => this.selectInstrument(item.dataset.instrument));
+                });
+
+                this.instrumentHeader.innerHTML = `Instruments <span class="count">(${instruments.length})</span>`;
+            }
+
+            selectInstrument(instrument) {
+                this.selectedInstrument = instrument;
+                this.selectedGroup = null;
+                this.selectedMaterials.clear();
+
+                this.instrumentList.querySelectorAll('.list-item').forEach(item => {
+                    item.classList.toggle('selected', item.dataset.instrument === instrument);
+                });
+
+                this.renderGroups();
+                this.renderMaterials();
+                this.updateUI();
+            }
+
+            renderGroups() {
+                if (!this.selectedInstrument) {
+                    this.groupList.innerHTML = `<div class="empty-state"><div class="empty-state-icon">📋</div>Select an instrument</div>`;
+                    this.groupHeader.innerHTML = 'Material Groups';
+                    return;
+                }
+
+                const groups = this.data.getGroupsForInstrument(this.selectedInstrument);
+                this.groupList.innerHTML = `<div class="list-item ${this.selectedGroup === null ? 'selected' : ''}" data-group="__all__">All Materials</div>` +
+                    groups.map(group => `<div class="list-item" data-group="${group}">${group}</div>`).join('');
+
+                this.groupList.querySelectorAll('.list-item').forEach(item => {
+                    item.addEventListener('click', () => {
+                        const group = item.dataset.group === '__all__' ? null : item.dataset.group;
+                        this.selectGroup(group);
+                    });
+                });
+
+                this.groupHeader.innerHTML = `Material Groups <span class="count">(${groups.length})</span>`;
+            }
+
+            selectGroup(group) {
+                this.selectedGroup = group;
+                this.selectedMaterials.clear();
+
+                this.groupList.querySelectorAll('.list-item').forEach(item => {
+                    const itemGroup = item.dataset.group === '__all__' ? null : item.dataset.group;
+                    item.classList.toggle('selected', itemGroup === group);
+                });
+
+                this.renderMaterials();
+                this.updateUI();
+            }
+
+            renderMaterials() {
+                if (!this.selectedInstrument) {
+                    this.materialGrid.innerHTML = `<div class="empty-state"><div class="empty-state-icon">🧪</div>Select an instrument to view materials</div>`;
+                    this.materialHeader.innerHTML = 'Materials';
+                    return;
+                }
+
+                let materials = this.selectedGroup === null 
+                    ? this.data.getAllMaterialsForInstrument(this.selectedInstrument)
+                    : this.data.getMaterialsForGroup(this.selectedInstrument, this.selectedGroup);
+
+                if (materials.length === 0) {
+                    this.materialGrid.innerHTML = `<div class="empty-state"><div class="empty-state-icon">📭</div>No materials found</div>`;
+                    this.materialHeader.innerHTML = 'Materials';
+                    return;
+                }
+
+                this.materialGrid.innerHTML = materials.map((mat, idx) => {
+                    const key = `${mat.group}::${mat.name}`;
+                    const isSelected = this.selectedMaterials.has(key);
+                    return `<div class="material-item ${isSelected ? 'selected' : ''}" data-key="${key}" data-idx="${idx}">
+                        <div class="material-name">${mat.name}</div>
+                        <div class="material-meta"><span>${mat.preparation}</span><span>${mat.expirationDays}d exp</span></div>
+                    </div>`;
+                }).join('');
+
+                this.currentMaterials = materials;
+
+                this.materialGrid.querySelectorAll('.material-item').forEach(item => {
+                    item.addEventListener('click', () => this.toggleMaterial(item.dataset.key));
+                });
+
+                this.materialHeader.innerHTML = `Materials <span class="count">(${materials.length})</span>`;
+            }
+
+            toggleMaterial(key) {
+                if (this.selectedMaterials.has(key)) {
+                    this.selectedMaterials.delete(key);
+                } else {
+                    this.selectedMaterials.add(key);
+                }
+
+                const item = this.materialGrid.querySelector(`[data-key="${key}"]`);
+                if (item) item.classList.toggle('selected', this.selectedMaterials.has(key));
+                this.updateUI();
+            }
+
+            printSelectedMaterials() {
+                if (!this.currentMaterials || this.selectedMaterials.size === 0) return;
+
+                const materialsToPrint = this.currentMaterials.filter(mat => {
+                    const key = `${mat.group}::${mat.name}`;
+                    return this.selectedMaterials.has(key);
+                });
+
+                materialsToPrint.forEach(mat => {
+                    const label = generateLabel(mat, this.isOpenedMode);
+                    this.labelSpool.unshift(label);
+                });
+
+                this.selectedMaterials.clear();
+                this.renderMaterials();
+                this.renderSpool();
+                this.updateUI();
+            }
+
+            renderSpool() {
+                if (this.labelSpool.length === 0) {
+                    this.spoolContainer.innerHTML = `<div class="empty-state"><div class="empty-state-icon">🏷️</div>No labels printed yet</div>`;
+                    this.spoolHeader.innerHTML = 'Label Spool';
+                    return;
+                }
+
+                this.spoolContainer.innerHTML = this.labelSpool.map((label, idx) => `
+                    <div class="label-card" data-idx="${idx}">
+                        <button class="remove-btn" data-idx="${idx}">&times;</button>
+                        <div class="label-header">${label.materialName}</div>
+                        <div class="label-line">
+                            <span class="label-key">${label.isOpened ? 'OPENED' : 'UNOPENED'}:</span>
+                            <span class="label-value">${label.isOpened ? label.openedDateTime : '—'}</span>
+                        </div>
+                        <div class="label-line">
+                            <span class="label-key">${label.preparation}:</span>
+                            <span class="label-value">${label.preparedDateTime}</span>
+                        </div>
+                        <div class="label-line">
+                            <span class="label-key">Expiration:</span>
+                            <span class="label-value">${label.expirationDateTime || 'N/A (Unopened)'}</span>
+                        </div>
+                    </div>
+                `).join('');
+
+                this.spoolContainer.querySelectorAll('.remove-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        this.removeLabel(parseInt(btn.dataset.idx, 10));
+                    });
+                });
+
+                this.spoolHeader.innerHTML = `Label Spool <span class="count">(${this.labelSpool.length})</span>`;
+            }
+
+            removeLabel(idx) {
+                this.labelSpool.splice(idx, 1);
+                this.renderSpool();
+                this.updateUI();
+            }
+
+            clearSelection() {
+                this.selectedMaterials.clear();
+                this.renderMaterials();
+                this.updateUI();
+            }
+
+            clearSpool() {
+                this.labelSpool = [];
+                this.renderSpool();
+                this.updateUI();
+            }
+
+            updateToggleUI() {
+                this.openToggle.classList.toggle('active', this.isOpenedMode);
+                this.statusIndicator.classList.toggle('opened', this.isOpenedMode);
+                this.statusIndicator.classList.toggle('unopened', !this.isOpenedMode);
+                this.statusText.textContent = this.isOpenedMode ? 'OPENED' : 'UNOPENED';
+            }
+
+            updateUI() {
+                const hasSelection = this.selectedMaterials.size > 0;
+                this.printBtn.disabled = !hasSelection;
+                this.printBtn.innerHTML = hasSelection 
+                    ? `Print Labels <span class="selection-badge">${this.selectedMaterials.size}</span>` 
+                    : 'Print Labels';
+                this.clearSelectionBtn.style.display = hasSelection ? 'block' : 'none';
+                this.clearSpoolBtn.style.display = this.labelSpool.length > 0 ? 'block' : 'none';
+                this.updateToggleUI();
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            window.app = new LabelPrinterApp();
+        });
+    </script>
+</body>
+</html>

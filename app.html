@@ -1941,9 +1941,9 @@ Clean I & II,CS2500,CA Clean I - On Board;CA Clean II - On Board;CA Clean I - Re
             const FADE_MS = 1_600;      // match CSS transition
             const MAX_FLAKES = 160;     // keep it light
 
-            function isDecember() {
-                const now = new Date();
-                return now.getMonth() === 11; // 0=Jan ... 11=Dec
+            function isDecemberOrJanuary() {
+              const month = new Date().getMonth(); // 0=Jan ... 11=Dec
+              return month === 11 || month === 0;  // Dec or Jan
             }
 
             function reducedMotion() {
@@ -2073,7 +2073,7 @@ Clean I & II,CS2500,CA Clean I - On Board;CA Clean II - On Board;CA Clean I - Re
             }
 
             document.addEventListener('DOMContentLoaded', () => {
-                if (!isDecember()) return;
+                if (!isDecemberorJanuary()) return;
                 if (reducedMotion()) return;
 
                 const canvas = document.getElementById('snow-canvas');

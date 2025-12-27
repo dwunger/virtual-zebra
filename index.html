@@ -897,6 +897,7 @@
            NEON TERMINAL LABEL CARDS - CRT Style
            ============================================ */
         .label-card {
+            flex-shrink: 0;
             background: #0a0a0a;
             color: #33ff33;
             border: 1px solid #33ff33;
@@ -970,33 +971,6 @@
             text-shadow: 0 0 12px rgba(51, 255, 51, 1);
         }
 
-        .label-card .label-line {
-            display: flex;
-            justify-content: space-between;
-            padding: 3px 0;
-            position: relative;
-            z-index: 3;
-            border-bottom: 1px solid rgba(51, 255, 51, 0.15);
-        }
-
-        .label-card .label-line:last-child {
-            border-bottom: none;
-        }
-
-        .label-card .label-key {
-            font-weight: 600;
-            color: #88ff88;
-            text-transform: uppercase;
-            font-size: 9px;
-            letter-spacing: 0.5px;
-        }
-
-        .label-card .label-value {
-            text-align: right;
-            font-family: 'JetBrains Mono', monospace;
-            color: #33ff33;
-        }
-
         .label-card .label-header {
             font-weight: 700;
             font-size: 12px;
@@ -1028,11 +1002,37 @@
             51%, 100% { opacity: 0; }
         }
 
-        /* Terminal prompt style for opened/unopened */
+        .label-card .label-line {
+            display: flex;
+            justify-content: space-between;
+            padding: 3px 0;
+            position: relative;
+            z-index: 3;
+            border-bottom: 1px solid rgba(51, 255, 51, 0.15);
+        }
+
+        .label-card .label-line:last-child {
+            border-bottom: none;
+        }
+
+        .label-card .label-key {
+            font-weight: 600;
+            color: #88ff88;
+            text-transform: uppercase;
+            font-size: 9px;
+            letter-spacing: 0.5px;
+        }
+
+        /* Terminal prompt style for first line */
         .label-card .label-line:first-of-type .label-key::before {
-            content: '>';
-            margin-right: 4px;
+            content: '> ';
             color: #00ff00;
+        }
+
+        .label-card .label-value {
+            text-align: right;
+            font-family: 'JetBrains Mono', monospace;
+            color: #33ff33;
         }
 
         .label-card .remove-btn {

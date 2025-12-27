@@ -3,26 +3,39 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lab Materials Label Printer</title>
+    <title>nvim virtual-zebra.lua</title>
     <style>
-        /* Lab Materials Label Printer - Industrial/Utilitarian Design */
-        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
+        /* Catppuccin Mocha + Neovim Terminal Theme */
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 
         :root {
-            --bg-dark: #1a1d21;
-            --bg-panel: #252930;
-            --bg-item: #2d323a;
-            --bg-item-hover: #363c47;
-            --bg-item-selected: #3d4654;
-            --border-color: #404854;
-            --border-accent: #5a6473;
-            --text-primary: #e8eaed;
-            --text-secondary: #9aa0a9;
-            --text-muted: #6b7280;
-            --accent-blue: #4a9eff;
-            --accent-green: #34d399;
-            --accent-amber: #fbbf24;
-            --accent-red: #f87171;
+            /* Catppuccin Mocha Palette */
+            --ctp-base: #1e1e2e;
+            --ctp-mantle: #181825;
+            --ctp-crust: #11111b;
+            --ctp-surface0: #313244;
+            --ctp-surface1: #45475a;
+            --ctp-surface2: #585b70;
+            --ctp-text: #cdd6f4;
+            --ctp-subtext1: #bac2de;
+            --ctp-subtext0: #a6adc8;
+            --ctp-overlay2: #9399b2;
+            --ctp-overlay1: #7f849c;
+            --ctp-overlay0: #6c7086;
+            --ctp-lavender: #b4befe;
+            --ctp-mauve: #cba6f7;
+            --ctp-pink: #f5c2e7;
+            --ctp-maroon: #eba0ac;
+            --ctp-red: #f38ba8;
+            --ctp-peach: #fab387;
+            --ctp-yellow: #f9e2af;
+            --ctp-green: #a6e3a1;
+            --ctp-teal: #94e2d5;
+            --ctp-sky: #89dceb;
+            --ctp-sapphire: #74c7ec;
+            --ctp-blue: #89b4fa;
+            
+            /* Label colors */
             --label-bg: #fefce8;
             --label-text: #1c1917;
             --label-border: #292524;
@@ -36,65 +49,221 @@
 
         html, body {
             height: 100%;
-            font-family: 'IBM Plex Sans', sans-serif;
-            background: var(--bg-dark);
-            color: var(--text-primary);
+            font-family: 'JetBrains Mono', monospace;
+            background: var(--ctp-crust);
+            color: var(--ctp-text);
+            overflow: hidden;
+        }
+
+        /* Terminal Window Chrome */
+        .terminal-window {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background: var(--ctp-crust);
+        }
+
+        .terminal-titlebar {
+            background: var(--ctp-mantle);
+            height: 36px;
+            display: flex;
+            align-items: center;
+            padding: 0 12px;
+            border-bottom: 1px solid var(--ctp-surface0);
+            gap: 12px;
+            user-select: none;
+        }
+
+        .traffic-lights {
+            display: flex;
+            gap: 8px;
+        }
+
+        .traffic-light {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            opacity: 0;
+            animation: fadeIn 0.3s ease forwards;
+        }
+
+        .traffic-light.red {
+            background: var(--ctp-red);
+            animation-delay: 0.1s;
+        }
+
+        .traffic-light.yellow {
+            background: var(--ctp-yellow);
+            animation-delay: 0.2s;
+        }
+
+        .traffic-light.green {
+            background: var(--ctp-green);
+            animation-delay: 0.3s;
+        }
+
+        .terminal-title {
+            font-size: 12px;
+            color: var(--ctp-subtext0);
+            font-weight: 500;
+            flex: 1;
+            text-align: center;
+            overflow: hidden;
+            white-space: nowrap;
+            opacity: 0;
+            animation: typeIn 1s steps(22) 0.5s forwards;
+        }
+
+        .terminal-title::before {
+            content: 'nvim virtual-zebra.lua';
+        }
+
+        /* Background Effects */
+        .background-grid {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: 
+                repeating-linear-gradient(
+                    0deg,
+                    transparent,
+                    transparent 2px,
+                    rgba(180, 190, 254, 0.015) 2px,
+                    rgba(180, 190, 254, 0.015) 4px
+                );
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .scanlines {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: repeating-linear-gradient(
+                0deg,
+                rgba(0, 0, 0, 0.15),
+                rgba(0, 0, 0, 0.15) 1px,
+                transparent 1px,
+                transparent 2px
+            );
+            pointer-events: none;
+            z-index: 1000;
+            opacity: 0.3;
         }
 
         .container {
             display: grid;
             grid-template-columns: 200px 1fr 280px;
             grid-template-rows: auto 1fr 70px;
-            height: 100vh;
+            height: calc(100vh - 36px);
             gap: 1px;
-            background: var(--border-color);
+            background: var(--ctp-surface0);
+            position: relative;
+            z-index: 1;
         }
 
         .panel {
-            background: var(--bg-panel);
+            background: var(--ctp-base);
             padding: 12px;
             display: flex;
             flex-direction: column;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .panel::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, 
+                transparent, 
+                var(--ctp-lavender) 50%, 
+                transparent
+            );
+            opacity: 0;
+            animation: shimmer 3s ease-in-out infinite;
         }
 
         .panel-header {
-            font-family: 'JetBrains Mono', monospace;
             font-size: 11px;
             font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 1.5px;
-            color: var(--text-secondary);
+            color: var(--ctp-lavender);
             padding-bottom: 10px;
-            border-bottom: 1px solid var(--border-color);
+            border-bottom: 1px solid var(--ctp-surface0);
             margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            opacity: 0;
+            animation: slideInFromTop 0.5s ease forwards;
         }
 
+        .panel-header::before {
+            content: '';
+            font-size: 14px;
+        }
+
+        #instrument-header::before { content: ''; }
+        #group-header::before { content: ''; }
+        #material-header::before { content: ''; }
+        #spool-header::before { content: ''; }
+
         .panel-header .count {
-            color: var(--text-muted);
+            color: var(--ctp-overlay0);
             font-weight: 400;
+            margin-left: 6px;
+        }
+
+        .panel-header .header-text {
+            overflow: hidden;
+            white-space: nowrap;
+            display: inline-block;
+            animation: typing 1.2s steps(30) forwards;
+            position: relative;
+            padding-right: 2px;
+        }
+
+        .panel-header .header-text::after {
+            content: '█';
+            color: var(--ctp-lavender);
+            animation: blink 0.7s step-end 2s, fadeOutCursor 0.3s ease 2s forwards;
+            margin-left: 1px;
         }
 
         .top-left {
             grid-column: 1;
             grid-row: 1;
+            animation-delay: 0.1s;
         }
 
         .middle-left {
             grid-column: 1;
             grid-row: 2;
             overflow-y: auto;
+            animation-delay: 0.2s;
         }
 
         .center {
             grid-column: 2;
             grid-row: 1 / 3;
             overflow-y: auto;
+            animation-delay: 0.3s;
         }
 
         .right {
             grid-column: 3;
             grid-row: 1 / 3;
             overflow-y: auto;
+            animation-delay: 0.4s;
         }
 
         .bottom-left {
@@ -103,6 +272,7 @@
             flex-direction: row;
             align-items: center;
             gap: 12px;
+            animation-delay: 0.5s;
         }
 
         .bottom-right {
@@ -110,6 +280,7 @@
             grid-row: 3;
             justify-content: center;
             align-items: center;
+            animation-delay: 0.6s;
         }
 
         .list-container {
@@ -121,24 +292,51 @@
         }
 
         .list-item {
-            font-family: 'JetBrains Mono', monospace;
             font-size: 12px;
             padding: 10px 12px;
-            background: var(--bg-item);
-            border-radius: 4px;
+            background: var(--ctp-surface0);
+            border-radius: 6px;
             cursor: pointer;
-            transition: all 0.15s ease;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
             border: 1px solid transparent;
+            position: relative;
+            opacity: 0;
+            animation: slideInFromLeft 0.3s ease forwards;
+        }
+
+        .list-item::before {
+            content: '▸';
+            position: absolute;
+            left: -2px;
+            opacity: 0;
+            color: var(--ctp-mauve);
+            transition: all 0.2s ease;
         }
 
         .list-item:hover {
-            background: var(--bg-item-hover);
+            background: var(--ctp-surface1);
+            transform: translateX(4px);
+            box-shadow: 0 0 20px rgba(180, 190, 254, 0.15);
+        }
+
+        .list-item:hover::before {
+            opacity: 1;
+            left: 4px;
         }
 
         .list-item.selected {
-            background: var(--bg-item-selected);
-            border-color: var(--accent-blue);
-            color: var(--accent-blue);
+            background: var(--ctp-surface1);
+            border-color: var(--ctp-lavender);
+            color: var(--ctp-lavender);
+            box-shadow: 0 0 20px rgba(180, 190, 254, 0.3),
+                        inset 0 0 20px rgba(180, 190, 254, 0.1);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        .list-item.selected::before {
+            content: '▶';
+            opacity: 1;
+            left: 4px;
         }
 
         .material-grid {
@@ -148,47 +346,107 @@
             flex: 1;
             align-content: start;
         }
+        
+        /* Center empty state vertically */
+        .material-grid:has(.empty-state) {
+            align-content: center;
+        }
 
         .material-item {
-            font-family: 'JetBrains Mono', monospace;
             font-size: 11px;
             padding: 12px;
-            background: var(--bg-item);
-            border-radius: 4px;
+            background: var(--ctp-surface0);
+            border-radius: 6px;
             cursor: pointer;
-            transition: all 0.15s ease;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
             border: 2px solid transparent;
             display: flex;
             flex-direction: column;
             gap: 6px;
+            position: relative;
+            overflow: hidden;
+            opacity: 0;
+            animation: fadeInScale 0.4s ease forwards;
+        }
+
+        .material-item::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(135deg, var(--ctp-lavender), var(--ctp-mauve), var(--ctp-pink));
+            border-radius: 6px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: -1;
         }
 
         .material-item:hover {
-            background: var(--bg-item-hover);
-            transform: translateY(-1px);
+            background: var(--ctp-surface1);
+            transform: translateY(-4px) scale(1.02);
+            box-shadow: 0 8px 24px rgba(180, 190, 254, 0.2);
         }
 
         .material-item.selected {
-            background: var(--bg-item-selected);
-            border-color: var(--accent-green);
+            background: var(--ctp-surface1);
+            border-color: var(--ctp-green);
+            box-shadow: 0 0 30px rgba(166, 227, 161, 0.4),
+                        inset 0 0 20px rgba(166, 227, 161, 0.1);
+        }
+
+        .material-item.selected::before {
+            opacity: 0.1;
         }
 
         .material-name {
             font-weight: 600;
-            color: var(--text-primary);
+            color: var(--ctp-lavender);
+            text-shadow: 0 0 10px rgba(180, 190, 254, 0.3);
         }
 
         .material-meta {
             font-size: 10px;
-            color: var(--text-muted);
+            color: var(--ctp-overlay0);
+            display: flex;
+            gap: 4px;
+            flex-wrap: wrap;
         }
 
         .material-meta span {
-            display: inline-block;
+            display: inline-flex;
             padding: 2px 6px;
-            background: var(--bg-dark);
+            background: var(--ctp-mantle);
             border-radius: 3px;
-            margin-right: 4px;
+            color: var(--ctp-peach);
+            border: 1px solid var(--ctp-surface0);
+            position: relative;
+            padding-right: 2px;
+        }
+
+        .material-meta .typing::after {
+            content: '█';
+            color: var(--ctp-lavender);
+            animation: blink 0.7s step-end infinite;
+            margin-left: 1px;
+        }
+
+        .material-meta .typing.cursor-timeout::after {
+            animation: blink 0.7s step-end 2s, fadeOutCursor 0.3s ease 2s forwards;
+        }
+
+        /* Cursor-only styling (no width animation, just cursor) */
+        .cursor-only {
+            position: relative;
+            padding-right: 2px;
+        }
+
+        .cursor-only::after {
+            content: '█';
+            color: var(--ctp-lavender);
+            animation: blink 0.7s step-end 2s, fadeOutCursor 0.3s ease 2s forwards;
+            margin-left: 1px;
         }
 
         .btn {
@@ -197,47 +455,72 @@
             font-weight: 600;
             padding: 12px 20px;
             border: none;
-            border-radius: 4px;
+            border-radius: 6px;
             cursor: pointer;
-            transition: all 0.15s ease;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
             text-transform: uppercase;
             letter-spacing: 1px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .btn:active::before {
+            width: 300px;
+            height: 300px;
         }
 
         .btn-primary {
-            background: var(--accent-blue);
-            color: var(--bg-dark);
+            background: linear-gradient(135deg, var(--ctp-lavender), var(--ctp-mauve));
+            color: var(--ctp-crust);
+            box-shadow: 0 4px 15px rgba(180, 190, 254, 0.4);
         }
 
         .btn-primary:hover {
-            background: #5eaaff;
-            transform: translateY(-1px);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 25px rgba(180, 190, 254, 0.6);
         }
 
         .btn-primary:disabled {
-            background: var(--bg-item);
-            color: var(--text-muted);
+            background: var(--ctp-surface0);
+            color: var(--ctp-overlay0);
             cursor: not-allowed;
             transform: none;
+            box-shadow: none;
         }
 
         .btn-secondary {
-            background: var(--bg-item);
-            color: var(--text-primary);
-            border: 1px solid var(--border-color);
+            background: var(--ctp-surface0);
+            color: var(--ctp-text);
+            border: 1px solid var(--ctp-surface1);
         }
 
         .btn-secondary:hover {
-            background: var(--bg-item-hover);
+            background: var(--ctp-surface1);
+            box-shadow: 0 4px 15px rgba(69, 71, 90, 0.4);
         }
 
         .btn-danger {
-            background: var(--accent-red);
-            color: var(--bg-dark);
+            background: linear-gradient(135deg, var(--ctp-red), var(--ctp-maroon));
+            color: var(--ctp-crust);
+            box-shadow: 0 4px 15px rgba(243, 139, 168, 0.4);
         }
 
         .btn-danger:hover {
-            background: #fb8a8a;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 25px rgba(243, 139, 168, 0.6);
         }
 
         .toggle-container {
@@ -247,9 +530,8 @@
         }
 
         .toggle-label {
-            font-family: 'JetBrains Mono', monospace;
             font-size: 11px;
-            color: var(--text-secondary);
+            color: var(--ctp-subtext0);
             text-transform: uppercase;
             letter-spacing: 1px;
         }
@@ -258,16 +540,17 @@
             position: relative;
             width: 56px;
             height: 28px;
-            background: var(--bg-item);
+            background: var(--ctp-surface0);
             border-radius: 14px;
             cursor: pointer;
-            transition: background 0.2s ease;
-            border: 1px solid var(--border-color);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid var(--ctp-surface1);
         }
 
         .toggle-switch.active {
-            background: var(--accent-green);
-            border-color: var(--accent-green);
+            background: linear-gradient(135deg, var(--ctp-green), var(--ctp-teal));
+            border-color: var(--ctp-green);
+            box-shadow: 0 0 20px rgba(166, 227, 161, 0.5);
         }
 
         .toggle-switch::after {
@@ -277,43 +560,46 @@
             left: 3px;
             width: 20px;
             height: 20px;
-            background: var(--text-primary);
+            background: var(--ctp-text);
             border-radius: 50%;
-            transition: transform 0.2s ease;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
         }
 
         .toggle-switch.active::after {
             transform: translateX(28px);
-            background: var(--bg-dark);
+            background: var(--ctp-crust);
         }
 
         .status-indicator {
             display: flex;
             align-items: center;
             gap: 10px;
-            font-family: 'JetBrains Mono', monospace;
             font-size: 12px;
             padding: 10px 16px;
-            background: var(--bg-item);
-            border-radius: 4px;
-            border: 1px solid var(--border-color);
+            background: var(--ctp-surface0);
+            border-radius: 6px;
+            border: 1px solid var(--ctp-surface1);
         }
 
         .status-dot {
             width: 10px;
             height: 10px;
             border-radius: 50%;
-            background: var(--text-muted);
+            background: var(--ctp-overlay0);
+            animation: pulse 2s ease-in-out infinite;
         }
 
         .status-indicator.opened .status-dot {
-            background: var(--accent-green);
-            box-shadow: 0 0 8px var(--accent-green);
+            background: var(--ctp-green);
+            box-shadow: 0 0 12px var(--ctp-green),
+                        0 0 24px var(--ctp-green);
         }
 
         .status-indicator.unopened .status-dot {
-            background: var(--accent-amber);
-            box-shadow: 0 0 8px var(--accent-amber);
+            background: var(--ctp-peach);
+            box-shadow: 0 0 12px var(--ctp-peach),
+                        0 0 24px var(--ctp-peach);
         }
 
         .spool-container {
@@ -328,13 +614,18 @@
             background: var(--label-bg);
             color: var(--label-text);
             border: 2px solid var(--label-border);
-            border-radius: 4px;
+            border-radius: 6px;
             padding: 10px 12px;
-            font-family: 'JetBrains Mono', monospace;
             font-size: 10px;
             line-height: 1.6;
             position: relative;
-            animation: slideIn 0.2s ease;
+            animation: slideInFromRight 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s ease;
+        }
+
+        .label-card:hover {
+            transform: translateX(-4px);
         }
 
         .label-card .label-line {
@@ -365,7 +656,7 @@
             right: 4px;
             width: 18px;
             height: 18px;
-            background: var(--accent-red);
+            background: var(--ctp-red);
             color: white;
             border: none;
             border-radius: 50%;
@@ -375,11 +666,18 @@
             align-items: center;
             justify-content: center;
             opacity: 0;
-            transition: opacity 0.15s ease;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 8px rgba(243, 139, 168, 0.4);
         }
 
         .label-card:hover .remove-btn {
             opacity: 1;
+            transform: rotate(90deg);
+        }
+
+        .label-card .remove-btn:hover {
+            background: var(--ctp-maroon);
+            transform: rotate(90deg) scale(1.2);
         }
 
         .empty-state {
@@ -387,35 +685,46 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            height: 100%;
-            color: var(--text-muted);
-            font-family: 'JetBrains Mono', monospace;
+            grid-column: 1 / -1;
+            min-height: 200px;
+            color: var(--ctp-overlay0);
             font-size: 11px;
             text-align: center;
-            padding: 20px;
+            opacity: 0;
+            animation: fadeIn 0.5s ease 0.5s forwards;
+        }
+        
+        /* Empty state in list containers (not grid) */
+        .list-container .empty-state,
+        .spool-container .empty-state {
+            height: 100%;
+            min-height: unset;
         }
 
         .empty-state-icon {
             font-size: 32px;
             margin-bottom: 12px;
             opacity: 0.5;
+            animation: float 3s ease-in-out infinite;
         }
 
         ::-webkit-scrollbar {
-            width: 8px;
+            width: 10px;
+            height: 10px;
         }
 
         ::-webkit-scrollbar-track {
-            background: var(--bg-dark);
+            background: var(--ctp-mantle);
         }
 
         ::-webkit-scrollbar-thumb {
-            background: var(--border-color);
-            border-radius: 4px;
+            background: var(--ctp-surface1);
+            border-radius: 5px;
+            border: 2px solid var(--ctp-mantle);
         }
 
         ::-webkit-scrollbar-thumb:hover {
-            background: var(--border-accent);
+            background: var(--ctp-surface2);
         }
 
         .flex-spacer {
@@ -427,17 +736,6 @@
             gap: 8px;
         }
 
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateY(-10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
         .selection-badge {
             display: inline-flex;
             align-items: center;
@@ -445,83 +743,319 @@
             min-width: 20px;
             height: 20px;
             padding: 0 6px;
-            background: var(--bg-dark);
-            color: var(--text-primary);
+            background: var(--ctp-crust);
+            color: var(--ctp-text);
             border-radius: 10px;
             font-size: 10px;
             font-weight: 700;
             margin-left: 8px;
+            box-shadow: 0 0 10px rgba(180, 190, 254, 0.3);
+        }
+
+        /* Mode Line (Neovim-style footer) */
+        .mode-line {
+            background: var(--ctp-mantle);
+            height: 24px;
+            display: flex;
+            align-items: center;
+            padding: 0 12px;
+            font-size: 11px;
+            border-top: 1px solid var(--ctp-surface0);
+            color: var(--ctp-subtext0);
+            gap: 16px;
+        }
+
+        .mode-indicator {
+            background: var(--ctp-lavender);
+            color: var(--ctp-crust);
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
+        .mode-line-info {
+            display: flex;
+            gap: 16px;
+            flex: 1;
+        }
+
+        .mode-line-info span {
+            opacity: 0.7;
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes typeIn {
+            from {
+                opacity: 0;
+                max-width: 0;
+            }
+            to {
+                opacity: 1;
+                max-width: 100%;
+            }
+        }
+
+        @keyframes slideInFromTop {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideInFromLeft {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes slideInFromRight {
+            from {
+                opacity: 0;
+                transform: translateX(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes fadeInScale {
+            from {
+                opacity: 0;
+                transform: scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.7;
+            }
+        }
+
+        @keyframes shimmer {
+            0%, 100% {
+                opacity: 0;
+            }
+            50% {
+                opacity: 0.3;
+            }
+        }
+
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-10px);
+            }
+        }
+
+        /* Staggered animations for list items */
+        .list-item:nth-child(1) { animation-delay: 0.05s; }
+        .list-item:nth-child(2) { animation-delay: 0.1s; }
+        .list-item:nth-child(3) { animation-delay: 0.15s; }
+        .list-item:nth-child(4) { animation-delay: 0.2s; }
+        .list-item:nth-child(5) { animation-delay: 0.25s; }
+        .list-item:nth-child(n+6) { animation-delay: 0.3s; }
+
+        /* Material items all appear at the same time */
+        .material-item { animation-delay: 0s !important; }
+
+        /* Typing Animation for Dynamic Content */
+        .typing {
+            overflow: hidden;
+            white-space: nowrap;
+            display: inline-block;
+            animation: typing 1.6s steps(40) forwards;
+            position: relative;
+            padding-right: 2px;
+        }
+
+        .typing::after {
+            content: '█';
+            color: var(--ctp-lavender);
+            animation: blink 0.7s step-end infinite;
+            margin-left: 1px;
+        }
+
+        /* Cursor fades out after typing completes */
+        .typing.cursor-timeout::after {
+            animation: blink 0.7s step-end 2s, fadeOutCursor 0.3s ease 2s forwards;
+        }
+
+        @keyframes typing {
+            from {
+                width: 0;
+            }
+            to {
+                width: 100%;
+            }
+        }
+
+        @keyframes blink {
+            0%, 50% {
+                opacity: 1;
+            }
+            51%, 100% {
+                opacity: 0;
+            }
+        }
+
+        @keyframes fadeOutCursor {
+            to {
+                opacity: 0;
+            }
+        }
+
+        /* Special typing for material names and headers */
+        .material-name.typing {
+            display: block;
+        }
+
+        .list-item.typing {
+            overflow: hidden;
+        }
+
+        .list-item .typing-text {
+            display: inline-block;
+            overflow: hidden;
+            white-space: nowrap;
+            animation: typing 1.2s steps(30) forwards;
+            position: relative;
+            padding-right: 2px;
+        }
+
+        .list-item .typing-text::after {
+            content: '█';
+            color: var(--ctp-lavender);
+            animation: blink 0.7s step-end infinite;
+            margin-left: 1px;
+        }
+
+        .list-item .typing-text.cursor-timeout::after {
+            animation: blink 0.7s step-end 2s, fadeOutCursor 0.3s ease 2s forwards;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="panel top-left">
-            <div class="panel-header" id="instrument-header">Instruments</div>
-            <div class="list-container" id="instrument-list">
-                <div class="empty-state">
-                    <div class="empty-state-icon">⏳</div>
-                    Loading...
-                </div>
+    <div class="background-grid"></div>
+    <div class="scanlines"></div>
+    
+    <div class="terminal-window">
+        <div class="terminal-titlebar">
+            <div class="traffic-lights">
+                <div class="traffic-light red"></div>
+                <div class="traffic-light yellow"></div>
+                <div class="traffic-light green"></div>
             </div>
+            <div class="terminal-title"></div>
         </div>
 
-        <div class="panel middle-left">
-            <div class="panel-header" id="group-header">Material Groups</div>
-            <div class="list-container" id="group-list">
-                <div class="empty-state">
-                    <div class="empty-state-icon">📋</div>
-                    Select an instrument
+        <div class="container">
+            <div class="panel top-left">
+                <div class="panel-header" id="instrument-header">Instruments</div>
+                <div class="list-container" id="instrument-list">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">⏳</div>
+                        Loading...
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <div class="panel center">
-            <div class="panel-header" id="material-header">Materials</div>
-            <div class="material-grid" id="material-grid">
-                <div class="empty-state">
-                    <div class="empty-state-icon">🧪</div>
-                    Select an instrument to view materials
+            <div class="panel middle-left">
+                <div class="panel-header" id="group-header">Material Groups</div>
+                <div class="list-container" id="group-list">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📋</div>
+                        Select an instrument
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <div class="panel right">
-            <div class="panel-header" id="spool-header">Label Spool</div>
-            <div class="spool-container" id="spool-container">
-                <div class="empty-state">
-                    <div class="empty-state-icon">🏷️</div>
-                    No labels printed yet
+            <div class="panel center">
+                <div class="panel-header" id="material-header">Materials</div>
+                <div class="material-grid" id="material-grid">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">🧪</div>
+                        Select an instrument to view materials
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <div class="panel bottom-left">
-            <div class="toggle-container">
-                <span class="toggle-label">Open Status:</span>
-                <div class="toggle-switch" id="open-toggle"></div>
+            <div class="panel right">
+                <div class="panel-header" id="spool-header">Label Spool</div>
+                <div class="spool-container" id="spool-container">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">🏷️</div>
+                        No labels printed yet
+                    </div>
+                </div>
             </div>
-            
-            <div class="flex-spacer"></div>
-            
-            <div class="button-group">
-                <button class="btn btn-secondary" id="clear-selection-btn" style="display: none;">
-                    Clear Selection
+
+            <div class="panel bottom-left">
+                <div class="toggle-container">
+                    <span class="toggle-label">Open Status:</span>
+                    <div class="toggle-switch" id="open-toggle"></div>
+                </div>
+                
+                <div class="flex-spacer"></div>
+                
+                <div class="button-group">
+                    <button class="btn btn-secondary" id="clear-selection-btn" style="display: none;">
+                        Clear Selection
+                    </button>
+                    <button class="btn btn-primary" id="print-btn" disabled>
+                        Print Labels
+                    </button>
+                </div>
+                
+                <button class="btn btn-danger" id="clear-spool-btn" style="display: none;">
+                    Clear Spool
                 </button>
-                <button class="btn btn-primary" id="print-btn" disabled>
-                    Print Labels
-                </button>
             </div>
-            
-            <button class="btn btn-danger" id="clear-spool-btn" style="display: none;">
-                Clear Spool
-            </button>
+
+            <div class="panel bottom-right">
+                <div class="status-indicator unopened" id="status-indicator">
+                    <div class="status-dot"></div>
+                    <span>Printing as: <strong id="status-text">UNOPENED</strong></span>
+                </div>
+            </div>
         </div>
 
-        <div class="panel bottom-right">
-            <div class="status-indicator unopened" id="status-indicator">
-                <div class="status-dot"></div>
-                <span>Printing as: <strong id="status-text">UNOPENED</strong></span>
+        <div class="mode-line">
+            <div class="mode-indicator">NORMAL</div>
+            <div class="mode-line-info">
+                <span>virtual-zebra.lua</span>
+                <span>[+]</span>
+                <span>UTF-8</span>
+                <span>LF</span>
+                <span>lua</span>
             </div>
         </div>
     </div>
@@ -742,15 +1276,17 @@ Clean I & II,CS2500,CA Clean I - On Board;CA Clean II - On Board;CA Clean I - Re
 
             renderInstruments() {
                 const instruments = this.data.getInstruments();
-                this.instrumentList.innerHTML = instruments.map(inst => 
-                    `<div class="list-item" data-instrument="${inst}">${inst}</div>`
+                this.instrumentList.innerHTML = instruments.map((inst, idx) => 
+                    `<div class="list-item" data-instrument="${inst}" style="animation-delay: ${0.05 * (idx + 1)}s">
+                        <span class="typing-text cursor-timeout" style="animation-delay: ${0.1 + (0.05 * idx)}s">${inst}</span>
+                    </div>`
                 ).join('');
 
                 this.instrumentList.querySelectorAll('.list-item').forEach(item => {
                     item.addEventListener('click', () => this.selectInstrument(item.dataset.instrument));
                 });
 
-                this.instrumentHeader.innerHTML = `Instruments <span class="count">(${instruments.length})</span>`;
+                this.instrumentHeader.innerHTML = `Instruments<span class="count">(${instruments.length})</span>`;
             }
 
             selectInstrument(instrument) {
@@ -775,8 +1311,14 @@ Clean I & II,CS2500,CA Clean I - On Board;CA Clean II - On Board;CA Clean I - Re
                 }
 
                 const groups = this.data.getGroupsForInstrument(this.selectedInstrument);
-                this.groupList.innerHTML = `<div class="list-item ${this.selectedGroup === null ? 'selected' : ''}" data-group="__all__">All Materials</div>` +
-                    groups.map(group => `<div class="list-item" data-group="${group}">${group}</div>`).join('');
+                this.groupList.innerHTML = `<div class="list-item ${this.selectedGroup === null ? 'selected' : ''}" data-group="__all__">
+                        <span class="typing-text cursor-timeout" style="animation-delay: 0.1s">All Materials</span>
+                    </div>` +
+                    groups.map((group, idx) => 
+                        `<div class="list-item" data-group="${group}" style="animation-delay: ${0.05 * (idx + 2)}s">
+                            <span class="typing-text cursor-timeout" style="animation-delay: ${0.15 + (0.05 * idx)}s">${group}</span>
+                        </div>`
+                    ).join('');
 
                 this.groupList.querySelectorAll('.list-item').forEach(item => {
                     item.addEventListener('click', () => {
@@ -785,7 +1327,7 @@ Clean I & II,CS2500,CA Clean I - On Board;CA Clean II - On Board;CA Clean I - Re
                     });
                 });
 
-                this.groupHeader.innerHTML = `Material Groups <span class="count">(${groups.length})</span>`;
+                this.groupHeader.innerHTML = `Material Groups<span class="count">(${groups.length})</span>`;
             }
 
             selectGroup(group) {
@@ -822,8 +1364,11 @@ Clean I & II,CS2500,CA Clean I - On Board;CA Clean II - On Board;CA Clean I - Re
                     const key = `${mat.group}::${mat.name}`;
                     const isSelected = this.selectedMaterials.has(key);
                     return `<div class="material-item ${isSelected ? 'selected' : ''}" data-key="${key}" data-idx="${idx}">
-                        <div class="material-name">${mat.name}</div>
-                        <div class="material-meta"><span>${mat.preparation}</span><span>${mat.expirationDays}d exp</span></div>
+                        <div class="material-name typing">${mat.name}</div>
+                        <div class="material-meta">
+                            <span class="cursor-only">${mat.preparation}</span>
+                            <span class="cursor-only">${mat.expirationDays}d exp</span>
+                        </div>
                     </div>`;
                 }).join('');
 
@@ -833,7 +1378,7 @@ Clean I & II,CS2500,CA Clean I - On Board;CA Clean II - On Board;CA Clean I - Re
                     item.addEventListener('click', () => this.toggleMaterial(item.dataset.key));
                 });
 
-                this.materialHeader.innerHTML = `Materials <span class="count">(${materials.length})</span>`;
+                this.materialHeader.innerHTML = `Materials<span class="count">(${materials.length})</span>`;
             }
 
             toggleMaterial(key) {
@@ -900,7 +1445,7 @@ Clean I & II,CS2500,CA Clean I - On Board;CA Clean II - On Board;CA Clean I - Re
                     });
                 });
 
-                this.spoolHeader.innerHTML = `Label Spool <span class="count">(${this.labelSpool.length})</span>`;
+                this.spoolHeader.innerHTML = `Label Spool<span class="count">(${this.labelSpool.length})</span>`;
             }
 
             removeLabel(idx) {

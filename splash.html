@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Milky Way Galaxy - ASCII Animation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background: #0a0a12;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+        canvas {
+            image-rendering: pixelated;
+        }
+        .controls {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #555;
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    <div class="controls">Milky Way Galaxy - Half Orbit</div>
+    
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        const WIDTH = 220;
+        const HEIGHT = 110;
+        // Smaller character size to match original
+        const CHAR_W = 3;
+        const CHAR_H = 4;
+        
+        canvas.width = WIDTH * CHAR_W;
+        canvas.height = HEIGHT * CHAR_H;
+        
+        // Smaller font
+        ctx.font = '4px Courier New';
+        ctx.textBaseline = 'top';
+        
+        const TOTAL_PIXELS = WIDTH * HEIGHT;
+        const gradient = ' .Â·:;+=xX#@';
+        const gradientLen = gradient.length - 1;
+        
+        // Pre-compute color lookup tables
+        const COLOR_LEVELS = 64;
+        const colorTables = {};
+        
+        function buildColorTable(colors) {
+            const table = [];
+            for (let i = 0; i < COLOR_LEVELS; i++) {
+                const brightness = i / (COLOR_LEVELS - 1);
+                const idx = brightness * (colors.length - 1);
+                const ci = Math.floor(idx);
+                const t = idx - ci;
+                const c1 = colors[Math.min(ci, colors.length - 1)];
+                const c2 = colors[Math.min(ci + 1, colors.length - 1)];
+                table.push(`rgb(${(c1.r + (c2.r - c1.r) * t) | 0},${(c1.g + (c2.g - c1.g) * t) | 0},${(c1.b + (c2.b - c1.b) * t) | 0})`);
+            }
+            return table;
+        }
+        
+        colorTables.background = buildColorTable([
+            { r: 20, g: 25, b: 45 },
+            { r: 60, g: 80, b: 120 },
+            { r: 100, g: 140, b: 170 },
+            { r: 150, g: 180, b: 200 },
+            { r: 200, g: 220, b: 240 },
+        ]);
+        
+        colorTables.nebula = buildColorTable([
+            { r: 30, g: 50, b: 60 },
+            { r: 50, g: 90, b: 90 },
+            { r: 70, g: 120, b: 100 },
+            { r: 100, g: 150, b: 120 },
+            { r: 140, g: 180, b: 150 },
+        ]);
+        
+        colorTables.core = buildColorTable([
+            { r: 80, g: 50, b: 30 },
+            { r: 180, g: 100, b: 40 },
+            { r: 230, g: 150, b: 50 },
+            { r: 255, g: 200, b: 100 },
+            { r: 255, g: 240, b: 200 },
+        ]);
+        
+        colorTables.star = buildColorTable([
+            { r: 25, g: 30, b: 50 },
+            { r: 70, g: 60, b: 80 },
+            { r: 120, g: 90, b: 70 },
+            { r: 180, g: 130, b: 80 },
+            { r: 220, g: 180, b: 120 },
+            { r: 250, g: 220, b: 180 },
+            { r: 255, g: 250, b: 240 },
+        ]);
+        
+        // Galaxy parameters
+        const CORE_RADIUS = 6;
+        const DISK_RADIUS = 85;
+        const DISK_THICKNESS = 4;
+        const NUM_ARMS = 2;
+        const ARM_TIGHTNESS = 0.28;
+        const ARM_WIDTH = 18;
+        
+        const stars = [];
+        const dustLanes = [];
+        const nebulaRegions = [];
+        const backgroundStars = [];
+        const distantGalaxies = [];
+        
+        function seededRandom(seed) {
+            const x = Math.sin(seed) * 43758.5453;
+            return x - Math.floor(x);
+        }
+        
+        // Background stars
+        for (let i = 0; i < 300; i++) {
+            const seed = i * 7.331 + 60000;
+            backgroundStars.push({
+                x: (seededRandom(seed) * WIDTH) | 0,
+                y: (seededRandom(seed + 1) * HEIGHT) | 0,
+                baseBrightness: 0.15 + seededRandom(seed + 2) * 0.5,
+                twinkleSpeed: 0.5 + seededRandom(seed + 3) * 3,
+                twinklePhase: seededRandom(seed + 4) * Math.PI * 2,
+                twinkleAmount: 0.3 + seededRandom(seed + 5) * 0.7
+            });
+        }
+        
+        // Distant galaxies
+        for (let i = 0; i < 18; i++) {
+            const seed = i * 11.11 + 70000;
+            distantGalaxies.push({
+                x: (seededRandom(seed) * WIDTH) | 0,
+                y: (seededRandom(seed + 1) * HEIGHT) | 0,
+                size: 1 + ((seededRandom(seed + 2) * 2) | 0),
+                baseBrightness: 0.2 + seededRandom(seed + 3) * 0.3,
+                twinkleSpeed: 0.2 + seededRandom(seed + 4) * 0.5,
+                twinklePhase: seededRandom(seed + 5) * Math.PI * 2
+            });
+        }
+        
+        // Spiral arm stars
+        for (let i = 0; i < 7000; i++) {
+            const seed = i * 1.618;
+            const r = Math.pow(seededRandom(seed), 0.5) * DISK_RADIUS;
+            if (r < CORE_RADIUS * 1.5) continue;
+            
+            const armIndex = (seededRandom(seed + 1) * NUM_ARMS) | 0;
+            const armOffset = (armIndex / NUM_ARMS) * Math.PI * 2;
+            const spiralAngle = armOffset + r * ARM_TIGHTNESS;
+            const scatter = (seededRandom(seed + 2) - 0.5) * ARM_WIDTH * (1 + r / DISK_RADIUS);
+            const theta = spiralAngle + scatter / (r + 10);
+            
+            let brightness = 0.3 + seededRandom(seed + 4) * 0.7;
+            brightness *= 0.5 + Math.abs(Math.sin((theta - armOffset) * NUM_ARMS)) * 0.5;
+            brightness *= 1 - (r / DISK_RADIUS) * 0.5;
+            
+            stars.push({
+                x: r * Math.cos(theta),
+                y: (seededRandom(seed + 3) - 0.5) * DISK_THICKNESS * (1 - r / DISK_RADIUS * 0.7),
+                z: r * Math.sin(theta),
+                brightness,
+                size: seededRandom(seed + 5),
+                type: 0
+            });
+        }
+        
+        // Accretion + core stars
+        for (let i = 0; i < 500; i++) {
+            const seed = i * 2.236 + 50000;
+            const r = CORE_RADIUS * 0.4 + seededRandom(seed) * CORE_RADIUS * 0.8;
+            const theta = seededRandom(seed + 1) * Math.PI * 2;
+            stars.push({
+                x: r * Math.cos(theta),
+                y: (seededRandom(seed + 2) - 0.5) * 0.5,
+                z: r * Math.sin(theta),
+                brightness: 0.9 + seededRandom(seed + 3) * 0.1,
+                size: seededRandom(seed + 4),
+                type: 2
+            });
+        }
+        
+        for (let i = 0; i < 1800; i++) {
+            const seed = i * 2.718 + 10000;
+            const r = CORE_RADIUS * 1.2 + Math.pow(seededRandom(seed), 1.5) * CORE_RADIUS * 3;
+            const theta = seededRandom(seed + 1) * Math.PI * 2;
+            const phi = (seededRandom(seed + 2) - 0.5) * Math.PI;
+            stars.push({
+                x: r * Math.cos(theta) * Math.cos(phi),
+                y: r * Math.sin(phi) * 0.5,
+                z: r * Math.sin(theta) * Math.cos(phi),
+                brightness: (0.5 + seededRandom(seed + 3) * 0.4) * 1.1,
+                size: seededRandom(seed + 4),
+                type: 1
+            });
+        }
+        
+        // Dust lanes
+        for (let i = 0; i < 1500; i++) {
+            const seed = i * 3.14 + 20000;
+            const r = seededRandom(seed) * DISK_RADIUS * 0.85 + CORE_RADIUS * 2;
+            const armIndex = (seededRandom(seed + 1) * NUM_ARMS) | 0;
+            const armOffset = (armIndex / NUM_ARMS) * Math.PI * 2;
+            const theta = armOffset + r * ARM_TIGHTNESS - 0.18 + (seededRandom(seed + 2) - 0.5) * 0.2;
+            dustLanes.push({
+                x: r * Math.cos(theta),
+                y: (seededRandom(seed + 3) - 0.5) * DISK_THICKNESS * 0.3,
+                z: r * Math.sin(theta),
+                opacity: 0.3 + seededRandom(seed + 4) * 0.4
+            });
+        }
+        
+        // Nebulae
+        for (let i = 0; i < 100; i++) {
+            const seed = i * 1.414 + 30000;
+            const r = seededRandom(seed) * DISK_RADIUS * 0.65 + 18;
+            const armIndex = (seededRandom(seed + 1) * NUM_ARMS) | 0;
+            const armOffset = (armIndex / NUM_ARMS) * Math.PI * 2;
+            const theta = armOffset + r * ARM_TIGHTNESS + (seededRandom(seed + 2) - 0.5) * 0.12;
+            nebulaRegions.push({
+                x: r * Math.cos(theta),
+                y: (seededRandom(seed + 3) - 0.5) * DISK_THICKNESS * 0.2,
+                z: r * Math.sin(theta),
+                radius: 2 + seededRandom(seed + 4) * 3,
+                brightness: 0.6 + seededRandom(seed + 5) * 0.3
+            });
+        }
+        
+        // Buffers
+        const brightBuffer = new Float32Array(TOTAL_PIXELS);
+        const typeBuffer = new Uint8Array(TOTAL_PIXELS);
+        const nebulaBuffer = new Float32Array(TOTAL_PIXELS);
+        const coreBuffer = new Float32Array(TOTAL_PIXELS);
+        const dustBuffer = new Float32Array(TOTAL_PIXELS);
+        const bgBuffer = new Float32Array(TOTAL_PIXELS);
+        
+        let frame = 0;
+        const TOTAL_FRAMES = 300;
+        const centerX = WIDTH / 2;
+        const centerY = HEIGHT / 2;
+        const invAspect = 0.5;
+        const invDiskRadius2 = 1 / (DISK_RADIUS * 2);
+        const tiltAngle = 0.35;
+        const cosTilt = Math.cos(tiltAngle);
+        const sinTilt = Math.sin(tiltAngle);
+        
+        function render() {
+            const orbitAngle = (frame / TOTAL_FRAMES) * Math.PI;
+            const time = frame * 0.05;
+            
+            const cosOrbit = Math.cos(orbitAngle);
+            const sinOrbit = Math.sin(orbitAngle);
+            
+            // Clear buffers
+            brightBuffer.fill(0);
+            typeBuffer.fill(0);
+            nebulaBuffer.fill(0);
+            coreBuffer.fill(0);
+            dustBuffer.fill(1);
+            bgBuffer.fill(0);
+            
+            // Background stars
+            for (let i = 0; i < backgroundStars.length; i++) {
+                const star = backgroundStars[i];
+                const twinkle = Math.sin(time * star.twinkleSpeed + star.twinklePhase);
+                const brightness = star.baseBrightness * (1 - star.twinkleAmount * 0.5 + twinkle * star.twinkleAmount * 0.5);
+                const idx = star.y * WIDTH + star.x;
+                if (brightness > bgBuffer[idx]) bgBuffer[idx] = brightness;
+            }
+            
+            // Distant galaxies
+            for (let i = 0; i < distantGalaxies.length; i++) {
+                const g = distantGalaxies[i];
+                const twinkle = Math.sin(time * g.twinkleSpeed + g.twinklePhase);
+                const brightness = g.baseBrightness * (0.85 + twinkle * 0.15);
+                for (let dy = -g.size; dy <= g.size; dy++) {
+                    for (let dx = -g.size; dx <= g.size; dx++) {
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        if (dist <= g.size) {
+                            const px = g.x + dx, py = g.y + dy;
+                            if (px >= 0 && px < WIDTH && py >= 0 && py < HEIGHT) {
+                                const idx = py * WIDTH + px;
+                                const val = brightness * (1 - dist / (g.size + 0.5));
+                                if (val > bgBuffer[idx]) bgBuffer[idx] = val;
+                            }
+                        }
+                    }
+                }
+            }
+            
+            // Dust
+            for (let i = 0; i < dustLanes.length; i++) {
+                const d = dustLanes[i];
+                const rx = d.x * cosOrbit + d.z * sinOrbit;
+                const rz1 = -d.x * sinOrbit + d.z * cosOrbit;
+                const ry = d.y * cosTilt - rz1 * sinTilt;
+                const sx = (centerX + rx) | 0, sy = (centerY - ry * invAspect) | 0;
+                if (sx >= 0 && sx < WIDTH && sy >= 0 && sy < HEIGHT) {
+                    dustBuffer[sy * WIDTH + sx] *= Math.max(0.15, 1 - d.opacity * 0.12);
+                }
+            }
+            
+            // Nebulae
+            for (let i = 0; i < nebulaRegions.length; i++) {
+                const n = nebulaRegions[i];
+                const rx = n.x * cosOrbit + n.z * sinOrbit;
+                const rz1 = -n.x * sinOrbit + n.z * cosOrbit;
+                const ry = n.y * cosTilt - rz1 * sinTilt;
+                const rz = n.y * sinTilt + rz1 * cosTilt;
+                const sx = centerX + rx, sy = centerY - ry * invAspect;
+                const radius = n.radius * (1 + rz / 200);
+                for (let dy = -radius | 0; dy <= radius; dy++) {
+                    for (let dx = -radius | 0; dx <= radius; dx++) {
+                        const distSq = dx * dx + dy * dy;
+                        if (distSq <= radius * radius) {
+                            const px = (sx + dx) | 0, py = (sy + dy * invAspect) | 0;
+                            if (px >= 0 && px < WIDTH && py >= 0 && py < HEIGHT) {
+                                nebulaBuffer[py * WIDTH + px] += n.brightness * (1 - Math.sqrt(distSq) / radius) * 0.25;
+                            }
+                        }
+                    }
+                }
+            }
+            
+            // Stars
+            for (let i = 0; i < stars.length; i++) {
+                const s = stars[i];
+                const rx = s.x * cosOrbit + s.z * sinOrbit;
+                const rz1 = -s.x * sinOrbit + s.z * cosOrbit;
+                const ry = s.y * cosTilt - rz1 * sinTilt;
+                const rz = s.y * sinTilt + rz1 * cosTilt;
+                const sx = (centerX + rx) | 0, sy = (centerY - ry * invAspect) | 0;
+                
+                if (sx >= 0 && sx < WIDTH && sy >= 0 && sy < HEIGHT) {
+                    const idx = sy * WIDTH + sx;
+                    let brightness = s.brightness * (0.7 + 0.3 * (rz + DISK_RADIUS) * invDiskRadius2);
+                    if (s.type === 1) { brightness *= 1.2; coreBuffer[idx] += brightness * 0.2; }
+                    else if (s.type === 2) { brightness *= 1.5; coreBuffer[idx] += brightness * 0.4; }
+                    brightBuffer[idx] += brightness * 0.35;
+                    if (s.type >= 1) typeBuffer[idx] = 3;
+                    else if (typeBuffer[idx] === 0) typeBuffer[idx] = 1;
+                }
+            }
+            
+            // Black hole
+            for (let dy = -18; dy <= 18; dy++) {
+                for (let dx = -18; dx <= 18; dx++) {
+                    const dist = Math.sqrt(dx * dx + dy * dy * 4);
+                    if (dist < 18 && dist > 2) {
+                        const px = (centerX + dx) | 0, py = (centerY + dy) | 0;
+                        if (px >= 0 && px < WIDTH && py >= 0 && py < HEIGHT) {
+                            let glow = dist < 5 ? 2.0 * (1 - (dist - 2) / 3) :
+                                       dist < 10 ? 1.2 * Math.pow(1 - (dist - 5) / 5, 1.5) :
+                                       0.6 * Math.pow(1 - (dist - 10) / 8, 2);
+                            const idx = py * WIDTH + px;
+                            coreBuffer[idx] += glow;
+                            typeBuffer[idx] = 3;
+                        }
+                    }
+                }
+            }
+            for (let dy = -2; dy <= 2; dy++) {
+                for (let dx = -2; dx <= 2; dx++) {
+                    if (dx * dx + dy * dy * 4 < 4) {
+                        const idx = ((centerY + dy) | 0) * WIDTH + ((centerX + dx) | 0);
+                        brightBuffer[idx] *= 0.1;
+                        coreBuffer[idx] *= 0.1;
+                    }
+                }
+            }
+            
+            // Render to canvas
+            ctx.fillStyle = '#0a0a12';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            for (let y = 0; y < HEIGHT; y++) {
+                for (let x = 0; x < WIDTH; x++) {
+                    const idx = y * WIDTH + x;
+                    let brightness = brightBuffer[idx] * dustBuffer[idx] + nebulaBuffer[idx] + coreBuffer[idx];
+                    let type = typeBuffer[idx];
+                    
+                    if (nebulaBuffer[idx] > brightBuffer[idx] * 0.5 && type < 2) type = 2;
+                    if (coreBuffer[idx] > 0.3) type = 3;
+                    
+                    let colorType;
+                    if (brightness < 0.03) {
+                        brightness = bgBuffer[idx];
+                        colorType = 'background';
+                    } else {
+                        colorType = type === 3 ? 'core' : (type === 2 ? 'nebula' : 'star');
+                    }
+                    
+                    if (brightness > 1) brightness = 1;
+                    if (brightness < 0.02) continue;
+                    
+                    const colorIdx = (brightness * (COLOR_LEVELS - 1)) | 0;
+                    ctx.fillStyle = colorTables[colorType][colorIdx];
+                    const char = gradient[(brightness * gradientLen) | 0] || '.';
+                    ctx.fillText(char, x * CHAR_W, y * CHAR_H);
+                }
+            }
+            
+            frame++;
+
+            if (frame >= TOTAL_FRAMES) {
+                // Fade out
+                document.body.style.transition = "opacity 0.6s ease";
+                document.body.style.opacity = "0";
+
+                // Redirect after fade
+                setTimeout(() => {
+                    window.location.href = "index.html";
+                }, 600);
+
+                return;
+            }
+
+            requestAnimationFrame(render);
+
+        }
+        
+        render();
+    </script>
+</body>
+</html>

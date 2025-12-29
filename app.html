@@ -34,12 +34,12 @@
             --ctp-sky: #89dceb;
             --ctp-sapphire: #74c7ec;
             --ctp-blue: #89b4fa;
-            
+
             /* Label colors */
             --label-bg: #fefce8;
             --label-text: #1c1917;
             --label-border: #292524;
-            
+
             /* Glassmorphism */
             --glass-bg: rgba(30, 30, 46, 0.6);
             --glass-border: rgba(180, 190, 254, 0.15);
@@ -549,7 +549,7 @@
             position: relative;
             z-index: 1;
         }
-        
+
         /* Center empty state vertically */
         .material-grid:has(.empty-state) {
             align-content: center;
@@ -1102,7 +1102,7 @@
             opacity: 0;
             animation: fadeIn 0.5s ease 0.5s forwards;
         }
-        
+
         /* Empty state in list containers (not grid) */
         .list-container .empty-state,
         .spool-container .empty-state {
@@ -1332,11 +1332,12 @@
         .typing::after {
             content: '█';
             color: var(--ctp-lavender);
+            animation: blink 0.7s step-end infinite;
             margin-left: 1px;
         
             animation:
                 blink 0.7s step-end infinite,
-                cursor-timeout 0s linear 6s forwards;
+                cursor-timeout 3s linear 3s forwards;
         }
 
 
@@ -1416,7 +1417,7 @@
 
     <div class="background-grid"></div>
     <div class="scanlines"></div>
-    
+
     <!-- Noise Texture Overlay -->
     <div class="noise-overlay"></div>
     <!-- December Snow Overlay (10s, non-interactive) -->
@@ -1424,7 +1425,7 @@
 
     <!-- Noise Texture Overlay -->
     <div class="noise-overlay"></div>
-    
+
     <div class="terminal-window">
         <div class="terminal-titlebar">
             <div class="traffic-lights">
@@ -1481,9 +1482,9 @@
                     <span class="toggle-label">Open Status:</span>
                     <div class="toggle-switch" id="open-toggle"></div>
                 </div>
-                
+
                 <div class="flex-spacer"></div>
-                
+
                 <div class="button-group">
                     <button class="btn btn-secondary" id="clear-selection-btn" style="display: none;">
                         Clear Selection
@@ -1492,7 +1493,7 @@
                         Print Labels
                     </button>
                 </div>
-                
+
                 <button class="btn btn-danger" id="clear-spool-btn" style="display: none;">
                     Clear Spool
                 </button>
@@ -1670,7 +1671,7 @@ Clean I & II,CS2500,CA Clean I - On Board;CA Clean II - On Board;CA Clean I - Re
             const preparation = material.preparation;
             const preparationRequiresOpen = preparation.toLowerCase() === 'opened';
             const showExpiration = !preparationRequiresOpen || isOpened;
-            
+
             return {
                 materialName: material.name,
                 group: material.group,

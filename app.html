@@ -1332,13 +1332,23 @@
         .typing::after {
             content: '█';
             color: var(--ctp-lavender);
-            animation: blink 0.7s step-end infinite;
             margin-left: 1px;
+        
+            animation:
+                blink 0.7s step-end infinite,
+                cursor-timeout 0s linear 3s forwards;
         }
+
 
         /* Cursor fades out after typing completes */
         .typing.cursor-timeout::after {
             animation: blink 0.7s step-end 2s, fadeOutCursor 0.3s ease 2s forwards;
+        }
+        
+        @keyframes cursor-timeout {
+            to {
+                opacity: 0;
+            }
         }
 
         @keyframes typing {

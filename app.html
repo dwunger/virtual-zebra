@@ -429,7 +429,9 @@
             grid-column: 3;
             grid-row: 1 / 3;
             overflow-y: auto;
+            overflow-x: visible;
             animation-delay: 0.4s;
+            position: relative;
         }
 
         .bottom-left {
@@ -908,6 +910,7 @@
             overflow-y: auto;
             position: relative;
             z-index: 1;
+            padding-top: 55px; /* Make room for printhead */
         }
 
         /* ============================================
@@ -1087,6 +1090,337 @@
                 0 0 15px rgba(255, 51, 51, 0.6),
                 0 0 30px rgba(255, 51, 51, 0.3);
             text-shadow: none;
+        }
+
+        /* ============================================
+           THERMAL PRINTHEAD ANIMATION SYSTEM
+           ============================================ */
+        .printhead-assembly {
+            position: absolute;
+            top: 40px; /* Below header */
+            left: 0;
+            right: 0;
+            height: 45px;
+            z-index: 100;
+            pointer-events: none;
+            overflow: visible;
+        }
+
+        /* The printhead carriage */
+        .printhead-carriage {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            height: 45px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* Mechanical rail at top */
+        .printhead-rail {
+            width: 100%;
+            height: 6px;
+            background: linear-gradient(180deg, 
+                #2a2a3c 0%, 
+                #1a1a2e 50%,
+                #0d0d15 100%
+            );
+            border-radius: 3px;
+            position: relative;
+            box-shadow: 
+                0 2px 8px rgba(0, 0, 0, 0.5),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+
+        /* Rail grooves */
+        .printhead-rail::before {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 10%;
+            right: 10%;
+            height: 2px;
+            background: repeating-linear-gradient(
+                90deg,
+                transparent,
+                transparent 3px,
+                rgba(0, 0, 0, 0.4) 3px,
+                rgba(0, 0, 0, 0.4) 4px
+            );
+            border-radius: 1px;
+        }
+
+        /* The actual printhead unit */
+        .printhead-unit {
+            position: relative;
+            width: 85%;
+            height: 35px;
+            margin-top: -2px;
+        }
+
+        /* Printhead body */
+        .printhead-body {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 28px;
+            background: linear-gradient(180deg,
+                #3d3d52 0%,
+                #2d2d42 40%,
+                #1d1d32 100%
+            );
+            border-radius: 0 0 4px 4px;
+            box-shadow: 
+                0 4px 15px rgba(0, 0, 0, 0.6),
+                inset 0 -2px 0 rgba(0, 0, 0, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.08);
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            padding-bottom: 3px;
+        }
+
+        /* Thermal element array (the actual print element) */
+        .thermal-element {
+            width: 92%;
+            height: 4px;
+            background: linear-gradient(90deg,
+                #1a1a2e 0%,
+                #33ff33 2%,
+                #33ff33 98%,
+                #1a1a2e 100%
+            );
+            border-radius: 1px;
+            position: relative;
+            box-shadow: 
+                0 0 8px rgba(51, 255, 51, 0.4),
+                0 0 20px rgba(51, 255, 51, 0.2);
+            transition: all 0.15s ease;
+        }
+
+        /* Heat indicator dots on thermal element */
+        .thermal-element::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 2px;
+            transform: translateY(-50%);
+            background: repeating-linear-gradient(
+                90deg,
+                rgba(51, 255, 51, 0.8) 0px,
+                rgba(51, 255, 51, 0.8) 1px,
+                transparent 1px,
+                transparent 3px
+            );
+            opacity: 0.6;
+        }
+
+        /* Printing state - thermal element heats up */
+        .printhead-assembly.printing .thermal-element {
+            background: linear-gradient(90deg,
+                #1a1a2e 0%,
+                #66ff66 2%,
+                #88ff88 50%,
+                #66ff66 98%,
+                #1a1a2e 100%
+            );
+            box-shadow: 
+                0 0 15px rgba(102, 255, 102, 0.7),
+                0 0 30px rgba(102, 255, 102, 0.4),
+                0 0 45px rgba(102, 255, 102, 0.2);
+            animation: thermal-pulse 0.1s ease-in-out infinite;
+        }
+
+        @keyframes thermal-pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.85; }
+        }
+
+        /* Paper feed slot */
+        .paper-feed-slot {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 88%;
+            height: 8px;
+            background: #0a0a0f;
+            border-radius: 0 0 3px 3px;
+            overflow: hidden;
+            box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.8);
+        }
+
+        /* Feed rollers visible through slot */
+        .paper-feed-slot::before,
+        .paper-feed-slot::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            width: 6px;
+            height: 6px;
+            background: radial-gradient(circle, #4a4a5e 0%, #2a2a3e 100%);
+            border-radius: 50%;
+            transform: translateY(-50%);
+            box-shadow: inset 0 0 2px rgba(0, 0, 0, 0.5);
+        }
+
+        .paper-feed-slot::before { left: 15%; }
+        .paper-feed-slot::after { right: 15%; }
+
+        /* Printing animation - rollers spin */
+        .printhead-assembly.printing .paper-feed-slot::before,
+        .printhead-assembly.printing .paper-feed-slot::after {
+            animation: roller-spin 0.2s linear infinite;
+        }
+
+        @keyframes roller-spin {
+            from { transform: translateY(-50%) rotate(0deg); }
+            to { transform: translateY(-50%) rotate(360deg); }
+        }
+
+        /* Status LED on printhead */
+        .printhead-led {
+            position: absolute;
+            top: 6px;
+            right: 8px;
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            background: var(--ctp-overlay0);
+            box-shadow: 0 0 4px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .printhead-assembly.ready .printhead-led {
+            background: var(--ctp-green);
+            box-shadow: 0 0 8px var(--ctp-green);
+        }
+
+        .printhead-assembly.printing .printhead-led {
+            background: var(--ctp-peach);
+            box-shadow: 0 0 8px var(--ctp-peach);
+            animation: led-blink 0.15s ease-in-out infinite;
+        }
+
+        @keyframes led-blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        /* ============================================
+           LABEL PRINTING ANIMATION
+           ============================================ */
+        
+        /* Labels start hidden above the printhead */
+        .label-card.printing {
+            animation: none;
+            opacity: 1;
+            max-height: 0;
+            overflow: hidden;
+            padding-top: 0;
+            padding-bottom: 0;
+            margin-top: 0;
+            border-width: 0 1px;
+            transform-origin: top center;
+        }
+
+        /* The "printing" reveal animation */
+        .label-card.print-reveal {
+            animation: label-print-reveal 1.2s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+        }
+
+        @keyframes label-print-reveal {
+            0% {
+                max-height: 0;
+                padding-top: 0;
+                padding-bottom: 0;
+                border-width: 0 1px;
+                opacity: 1;
+                transform: scaleY(1);
+            }
+            5% {
+                border-width: 1px;
+                padding-top: 2px;
+            }
+            100% {
+                max-height: 200px;
+                padding-top: 12px;
+                padding-bottom: 12px;
+                border-width: 1px;
+                opacity: 1;
+                transform: scaleY(1);
+            }
+        }
+
+        /* Print line scanning effect */
+        .label-card.print-reveal::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(180deg,
+                rgba(51, 255, 51, 0.9) 0%,
+                rgba(51, 255, 51, 0.4) 50%,
+                transparent 100%
+            );
+            animation: print-scan 1.2s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+            z-index: 10;
+        }
+
+        @keyframes print-scan {
+            0% { top: 0; opacity: 1; }
+            90% { opacity: 1; }
+            100% { top: 100%; opacity: 0; }
+        }
+
+        /* Thermal print "burn-in" effect for text */
+        .label-card.print-reveal .label-header,
+        .label-card.print-reveal .label-line {
+            animation: thermal-burn 0.8s ease-out forwards;
+            animation-delay: inherit;
+        }
+
+        .label-card.print-reveal .label-header { animation-delay: 0.1s; }
+        .label-card.print-reveal .label-line:nth-child(2) { animation-delay: 0.3s; }
+        .label-card.print-reveal .label-line:nth-child(3) { animation-delay: 0.5s; }
+        .label-card.print-reveal .label-line:nth-child(4) { animation-delay: 0.7s; }
+
+        @keyframes thermal-burn {
+            0% {
+                opacity: 0;
+                text-shadow: 0 0 20px rgba(51, 255, 51, 1);
+                filter: blur(2px);
+            }
+            30% {
+                opacity: 1;
+                text-shadow: 0 0 15px rgba(51, 255, 51, 0.9);
+                filter: blur(1px);
+            }
+            100% {
+                opacity: 1;
+                text-shadow: 0 0 8px rgba(51, 255, 51, 0.8);
+                filter: blur(0);
+            }
+        }
+
+        /* Paper feed sound visualization - subtle shake */
+        .label-card.print-reveal {
+            animation: label-print-reveal 1.2s cubic-bezier(0.22, 0.61, 0.36, 1) forwards,
+                       paper-feed-jitter 0.05s linear 8;
+        }
+
+        @keyframes paper-feed-jitter {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-0.5px); }
+            75% { transform: translateX(0.5px); }
         }
 
         .empty-state {
@@ -1469,6 +1803,21 @@
 
             <div class="panel right">
                 <div class="panel-header" id="spool-header">Label Spool</div>
+                
+                <!-- Thermal Printhead Assembly -->
+                <div class="printhead-assembly ready" id="printhead-assembly">
+                    <div class="printhead-carriage">
+                        <div class="printhead-rail"></div>
+                        <div class="printhead-unit">
+                            <div class="printhead-body">
+                                <div class="thermal-element"></div>
+                                <div class="printhead-led"></div>
+                            </div>
+                            <div class="paper-feed-slot"></div>
+                        </div>
+                    </div>
+                </div>
+                
                 <div class="spool-container" id="spool-container">
                     <div class="empty-state">
                         <div class="empty-state-icon">🏷️</div>
@@ -1721,6 +2070,7 @@ Clean I & II,CS2500,CA Clean I - On Board;CA Clean II - On Board;CA Clean I - Re
                 this.openToggle = document.getElementById('open-toggle');
                 this.statusIndicator = document.getElementById('status-indicator');
                 this.statusText = document.getElementById('status-text');
+                this.printheadAssembly = document.getElementById('printhead-assembly');
             }
 
             bindEvents() {
@@ -1860,15 +2210,114 @@ Clean I & II,CS2500,CA Clean I - On Board;CA Clean II - On Board;CA Clean I - Re
                     return this.selectedMaterials.has(key);
                 });
 
-                materialsToPrint.forEach(mat => {
-                    const label = generateLabel(mat, this.isOpenedMode);
-                    this.labelSpool.unshift(label);
+                // Clear empty state if present
+                const emptyState = this.spoolContainer.querySelector('.empty-state');
+                if (emptyState) {
+                    emptyState.remove();
+                }
+
+                // Start printhead animation
+                this.printheadAssembly.classList.remove('ready');
+                this.printheadAssembly.classList.add('printing');
+                
+                // Disable print button during animation
+                this.printBtn.disabled = true;
+                this.printBtn.textContent = 'Printing...';
+
+                // Print each label with staggered animation
+                let delay = 0;
+                const PRINT_DURATION = 1400; // Time for each label to print
+
+                materialsToPrint.forEach((mat, index) => {
+                    setTimeout(() => {
+                        const label = generateLabel(mat, this.isOpenedMode);
+                        this.labelSpool.unshift(label);
+                        
+                        // Create label element with printing class
+                        const labelEl = this.createLabelElement(label, 0, true);
+                        
+                        // Insert at top of spool
+                        this.spoolContainer.insertBefore(labelEl, this.spoolContainer.firstChild);
+                        
+                        // Trigger print reveal animation after a tiny delay
+                        requestAnimationFrame(() => {
+                            requestAnimationFrame(() => {
+                                labelEl.classList.remove('printing');
+                                labelEl.classList.add('print-reveal');
+                            });
+                        });
+
+                        // Update header count
+                        this.spoolHeader.innerHTML = `Label Spool<span class="count">(${this.labelSpool.length})</span>`;
+                        
+                    }, delay);
+                    
+                    delay += PRINT_DURATION;
                 });
 
-                this.selectedMaterials.clear();
-                this.renderMaterials();
-                this.renderSpool();
-                this.updateUI();
+                // After all labels are printed
+                setTimeout(() => {
+                    this.printheadAssembly.classList.remove('printing');
+                    this.printheadAssembly.classList.add('ready');
+                    
+                    this.selectedMaterials.clear();
+                    this.renderMaterials();
+                    this.updateUI();
+                }, delay + 200);
+            }
+
+            createLabelElement(label, idx, isPrinting = false) {
+                const div = document.createElement('div');
+                div.className = `label-card ${isPrinting ? 'printing' : ''}`;
+                div.dataset.idx = idx;
+                div.innerHTML = `
+                    <button class="remove-btn" data-idx="${idx}">&times;</button>
+                    <div class="label-header">${label.materialName}</div>
+                    <div class="label-line">
+                        <span class="label-key">${label.isOpened ? 'OPENED' : 'UNOPENED'}:</span>
+                        <span class="label-value">${label.isOpened ? label.openedDateTime : '—'}</span>
+                    </div>
+                    <div class="label-line">
+                        <span class="label-key">${label.preparation}:</span>
+                        <span class="label-value">${label.preparedDateTime}</span>
+                    </div>
+                    <div class="label-line">
+                        <span class="label-key">Expiration:</span>
+                        <span class="label-value">${label.expirationDateTime || 'N/A (Unopened)'}</span>
+                    </div>
+                `;
+                
+                div.querySelector('.remove-btn').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this.removeLabelByElement(div);
+                });
+                
+                return div;
+            }
+
+            removeLabelByElement(element) {
+                const allCards = Array.from(this.spoolContainer.querySelectorAll('.label-card'));
+                const idx = allCards.indexOf(element);
+                if (idx !== -1) {
+                    this.labelSpool.splice(idx, 1);
+                    element.remove();
+                    this.updateSpoolIndices();
+                    this.updateUI();
+                }
+            }
+
+            updateSpoolIndices() {
+                const cards = this.spoolContainer.querySelectorAll('.label-card');
+                cards.forEach((card, idx) => {
+                    card.dataset.idx = idx;
+                    const btn = card.querySelector('.remove-btn');
+                    if (btn) btn.dataset.idx = idx;
+                });
+                this.spoolHeader.innerHTML = `Label Spool<span class="count">(${this.labelSpool.length})</span>`;
+                
+                if (this.labelSpool.length === 0) {
+                    this.spoolContainer.innerHTML = `<div class="empty-state"><div class="empty-state-icon">🏷️</div>No labels printed yet</div>`;
+                }
             }
 
             renderSpool() {
@@ -1908,9 +2357,13 @@ Clean I & II,CS2500,CA Clean I - On Board;CA Clean II - On Board;CA Clean I - Re
             }
 
             removeLabel(idx) {
-                this.labelSpool.splice(idx, 1);
-                this.renderSpool();
-                this.updateUI();
+                const cards = this.spoolContainer.querySelectorAll('.label-card');
+                if (cards[idx]) {
+                    this.labelSpool.splice(idx, 1);
+                    cards[idx].remove();
+                    this.updateSpoolIndices();
+                    this.updateUI();
+                }
             }
 
             clearSelection() {
@@ -1921,7 +2374,8 @@ Clean I & II,CS2500,CA Clean I - On Board;CA Clean II - On Board;CA Clean I - Re
 
             clearSpool() {
                 this.labelSpool = [];
-                this.renderSpool();
+                this.spoolContainer.innerHTML = `<div class="empty-state"><div class="empty-state-icon">🏷️</div>No labels printed yet</div>`;
+                this.spoolHeader.innerHTML = 'Label Spool';
                 this.updateUI();
             }
 

@@ -652,6 +652,177 @@
             margin-left: 6px;
         }
 
+        /* ============================================
+           MINIMALIST SEARCH WIDGET
+           ============================================ */
+        .material-header-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(180, 190, 254, 0.2);
+            margin-bottom: 10px;
+            opacity: 0;
+            animation: slideInFromTop 0.5s ease forwards;
+        }
+
+        .material-header-row .panel-header {
+            border-bottom: none;
+            padding-bottom: 0;
+            margin-bottom: 0;
+            animation: none;
+            opacity: 1;
+        }
+
+        .search-widget {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .search-widget-input {
+            width: 0;
+            padding: 0;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            color: var(--ctp-text);
+            background: var(--ctp-crust);
+            border: 1px solid transparent;
+            border-radius: 20px;
+            outline: none;
+            transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+            box-shadow: 
+                0 4px 20px rgba(0, 0, 0, 0.4),
+                0 2px 8px rgba(0, 0, 0, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.03);
+            opacity: 0;
+        }
+
+        .search-widget-input::placeholder {
+            color: var(--ctp-overlay0);
+            opacity: 0.6;
+        }
+
+        .search-widget-input:focus,
+        .search-widget.expanded .search-widget-input {
+            width: 180px;
+            padding: 8px 36px 8px 14px;
+            opacity: 1;
+            border-color: rgba(180, 190, 254, 0.15);
+        }
+
+        .search-widget-input:focus {
+            border-color: rgba(180, 190, 254, 0.3);
+            box-shadow: 
+                0 6px 30px rgba(0, 0, 0, 0.5),
+                0 2px 10px rgba(0, 0, 0, 0.4),
+                0 0 20px rgba(180, 190, 254, 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.05);
+        }
+
+        .search-widget-btn {
+            position: absolute;
+            right: 2px;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--ctp-crust);
+            border: 1px solid rgba(180, 190, 254, 0.1);
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+            box-shadow: 
+                0 4px 15px rgba(0, 0, 0, 0.4),
+                0 2px 6px rgba(0, 0, 0, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.03);
+            z-index: 2;
+        }
+
+        .search-widget-btn:hover {
+            transform: scale(1.08);
+            border-color: rgba(180, 190, 254, 0.25);
+            box-shadow: 
+                0 6px 25px rgba(0, 0, 0, 0.5),
+                0 0 15px rgba(180, 190, 254, 0.15);
+        }
+
+        .search-widget-btn:active {
+            transform: scale(0.95);
+        }
+
+        .search-widget-btn svg {
+            width: 14px;
+            height: 14px;
+            stroke: var(--ctp-overlay1);
+            transition: stroke 0.2s ease;
+        }
+
+        .search-widget-btn:hover svg {
+            stroke: var(--ctp-lavender);
+        }
+
+        .search-widget.has-query .search-widget-btn svg {
+            stroke: var(--ctp-red);
+        }
+
+        .search-widget.has-query .search-widget-btn:hover {
+            border-color: rgba(243, 139, 168, 0.3);
+            box-shadow: 
+                0 6px 25px rgba(0, 0, 0, 0.5),
+                0 0 15px rgba(243, 139, 168, 0.15);
+        }
+
+        /* Search results indicator */
+        .search-results-badge {
+            position: absolute;
+            top: -6px;
+            left: -6px;
+            min-width: 18px;
+            height: 18px;
+            padding: 0 5px;
+            background: linear-gradient(135deg, var(--ctp-mauve), var(--ctp-lavender));
+            color: var(--ctp-crust);
+            font-size: 9px;
+            font-weight: 700;
+            border-radius: 9px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transform: scale(0);
+            transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+            box-shadow: 0 2px 10px rgba(180, 190, 254, 0.4);
+            z-index: 3;
+        }
+
+        .search-widget.has-results .search-results-badge {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        /* Highlight matching text in material names */
+        .material-name .search-highlight {
+            background: linear-gradient(135deg, rgba(203, 166, 247, 0.3), rgba(180, 190, 254, 0.3));
+            color: var(--ctp-mauve);
+            padding: 0 2px;
+            border-radius: 2px;
+            text-shadow: 0 0 10px rgba(203, 166, 247, 0.5);
+        }
+
+        /* Dim non-matching materials */
+        .material-item.search-hidden {
+            opacity: 0.15;
+            transform: scale(0.95);
+            pointer-events: none;
+        }
+
+        .material-item.search-match {
+            border-color: rgba(180, 190, 254, 0.25);
+            box-shadow: 0 0 20px rgba(180, 190, 254, 0.1);
+        }
+
         .panel-header .header-text {
             overflow: hidden;
             white-space: nowrap;
@@ -2296,7 +2467,19 @@
             </div>
 
             <div class="panel center">
-                <div class="panel-header" id="material-header">Materials</div>
+                <div class="material-header-row">
+                    <div class="panel-header" id="material-header">Materials</div>
+                    <div class="search-widget" id="search-widget">
+                        <span class="search-results-badge" id="search-results-badge">0</span>
+                        <input type="text" class="search-widget-input" id="material-search" placeholder="Search all..." autocomplete="off" spellcheck="false">
+                        <button class="search-widget-btn" id="search-btn" title="Search materials">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="11" cy="11" r="8"></circle>
+                                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
                 <div class="material-grid" id="material-grid">
                     <div class="empty-state">
                         <div class="empty-state-icon">🧪</div>
@@ -2583,6 +2766,12 @@ Clean I & II,CS2500,CA Clean I - On Board;CA Clean II - On Board;CA Clean I - Re
                 this.statusText = document.getElementById('status-text');
                 this.printheadAssembly = document.getElementById('printhead-assembly');
                 this.sparkContainer = document.getElementById('spark-container');
+                // Search widget elements
+                this.searchWidget = document.getElementById('search-widget');
+                this.searchInput = document.getElementById('material-search');
+                this.searchBtn = document.getElementById('search-btn');
+                this.searchResultsBadge = document.getElementById('search-results-badge');
+                this.searchQuery = '';
             }
 
             bindEvents() {
@@ -2594,6 +2783,128 @@ Clean I & II,CS2500,CA Clean I - On Board;CA Clean II - On Board;CA Clean I - Re
                 this.printBtn.addEventListener('click', () => this.printSelectedMaterials());
                 this.clearSelectionBtn.addEventListener('click', () => this.clearSelection());
                 this.clearSpoolBtn.addEventListener('click', () => this.clearSpool());
+                
+                // Search widget events
+                this.searchInput.addEventListener('input', (e) => this.handleSearchInput(e));
+                this.searchInput.addEventListener('focus', () => this.expandSearch());
+                this.searchInput.addEventListener('blur', () => this.collapseSearch());
+                this.searchInput.addEventListener('keydown', (e) => {
+                    if (e.key === 'Escape') {
+                        this.clearSearch();
+                        this.searchInput.blur();
+                    }
+                });
+                this.searchBtn.addEventListener('click', () => this.handleSearchBtnClick());
+            }
+
+            handleSearchInput(e) {
+                this.searchQuery = e.target.value.trim().toLowerCase();
+                this.applySearchFilter();
+            }
+
+            expandSearch() {
+                this.searchWidget.classList.add('expanded');
+            }
+
+            collapseSearch() {
+                if (!this.searchQuery) {
+                    this.searchWidget.classList.remove('expanded');
+                }
+            }
+
+            handleSearchBtnClick() {
+                if (this.searchQuery) {
+                    this.clearSearch();
+                } else {
+                    this.searchInput.focus();
+                }
+            }
+
+            clearSearch() {
+                this.searchQuery = '';
+                this.searchInput.value = '';
+                this.searchWidget.classList.remove('has-query', 'has-results', 'expanded');
+                this.applySearchFilter();
+            }
+
+            applySearchFilter() {
+                const query = this.searchQuery;
+                
+                // Update widget state
+                if (query) {
+                    this.searchWidget.classList.add('has-query');
+                    this.renderSearchResults(query);
+                } else {
+                    this.searchWidget.classList.remove('has-query', 'has-results');
+                    // Restore normal view based on current selection
+                    this.renderMaterialsInternal();
+                }
+            }
+
+            renderSearchResults(query) {
+                // Search across ALL materials from ALL instruments
+                const allMaterials = this.getAllMaterials();
+                const matchingMaterials = allMaterials.filter(mat => 
+                    mat.name.toLowerCase().includes(query)
+                );
+
+                if (matchingMaterials.length === 0) {
+                    this.materialGrid.innerHTML = `<div class="empty-state"><div class="empty-state-icon">🔍</div>No materials match "${query}"</div>`;
+                    this.materialHeader.innerHTML = `Materials <span class="count">(0 results)</span>`;
+                    this.searchWidget.classList.remove('has-results');
+                    return;
+                }
+
+                // Update results badge
+                this.searchWidget.classList.add('has-results');
+                this.searchResultsBadge.textContent = matchingMaterials.length;
+
+                // Render matching materials with highlights
+                this.materialGrid.innerHTML = matchingMaterials.map((mat, idx) => {
+                    const key = `${mat.group}::${mat.name}`;
+                    const isSelected = this.selectedMaterials.has(key);
+                    const highlightedName = this.highlightMatch(mat.name, query);
+                    return `<div class="material-item search-match ${isSelected ? 'selected' : ''}" data-key="${key}" data-idx="${idx}">
+                        <div class="material-name" data-original-name="${mat.name}">${highlightedName}</div>
+                        <div class="material-meta">
+                            <span class="cursor-only">${mat.instrument}</span>
+                            <span class="cursor-only">${mat.preparation}</span>
+                            <span class="cursor-only">${mat.expirationDays}d exp</span>
+                        </div>
+                    </div>`;
+                }).join('');
+
+                // Store for selection/printing
+                this.currentMaterials = matchingMaterials;
+
+                // Bind click events
+                this.materialGrid.querySelectorAll('.material-item').forEach(item => {
+                    item.addEventListener('click', () => this.toggleMaterial(item.dataset.key));
+                });
+
+                this.materialHeader.innerHTML = `Materials <span class="count">(${matchingMaterials.length} results)</span>`;
+            }
+
+            getAllMaterials() {
+                const materials = [];
+                for (const [instrument, instrumentMaterials] of this.data.materialsByInstrument.entries()) {
+                    for (const groupMaterials of instrumentMaterials.values()) {
+                        groupMaterials.forEach(mat => materials.push(mat));
+                    }
+                }
+                return materials;
+            }
+
+            highlightMatch(text, query) {
+                const lowerText = text.toLowerCase();
+                const index = lowerText.indexOf(query);
+                if (index === -1) return text;
+                
+                const before = text.slice(0, index);
+                const match = text.slice(index, index + query.length);
+                const after = text.slice(index + query.length);
+                
+                return `${before}<span class="search-highlight">${match}</span>${after}`;
             }
 
             triggerSwitchEffect() {
@@ -2727,6 +3038,15 @@ Clean I & II,CS2500,CA Clean I - On Board;CA Clean II - On Board;CA Clean I - Re
             }
 
             renderMaterials() {
+                // If there's an active search, don't override search results
+                if (this.searchQuery) {
+                    this.applySearchFilter();
+                    return;
+                }
+                this.renderMaterialsInternal();
+            }
+
+            renderMaterialsInternal() {
                 if (!this.selectedInstrument) {
                     this.materialGrid.innerHTML = `<div class="empty-state"><div class="empty-state-icon">🧪</div>Select an instrument to view materials</div>`;
                     this.materialHeader.innerHTML = 'Materials';
@@ -2747,7 +3067,7 @@ Clean I & II,CS2500,CA Clean I - On Board;CA Clean II - On Board;CA Clean I - Re
                     const key = `${mat.group}::${mat.name}`;
                     const isSelected = this.selectedMaterials.has(key);
                     return `<div class="material-item ${isSelected ? 'selected' : ''}" data-key="${key}" data-idx="${idx}">
-                        <div class="material-name typing">${mat.name}</div>
+                        <div class="material-name typing" data-original-name="${mat.name}">${mat.name}</div>
                         <div class="material-meta">
                             <span class="cursor-only">${mat.preparation}</span>
                             <span class="cursor-only">${mat.expirationDays}d exp</span>

@@ -172,6 +172,269 @@
             background-size: 256px 256px;
         }
 
+        /* ============================================
+           CRT POWER-ON BOOT SEQUENCE
+           ============================================ */
+        .crt-boot-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 100000;
+            background: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            pointer-events: all;
+        }
+
+        /* The horizontal line that expands */
+        .crt-boot-line {
+            position: absolute;
+            left: 0;
+            right: 0;
+            top: 50%;
+            height: 2px;
+            background: #fff;
+            transform: translateY(-50%) scaleX(0);
+            box-shadow: 
+                0 0 20px 5px rgba(255, 255, 255, 0.8),
+                0 0 40px 10px rgba(255, 255, 255, 0.4),
+                0 0 80px 20px rgba(180, 190, 254, 0.3);
+            opacity: 0;
+        }
+
+        /* Static noise during boot */
+        .crt-boot-static {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+            background-size: 256px 256px;
+            mix-blend-mode: overlay;
+        }
+
+        /* Phosphor glow bloom effect */
+        .crt-boot-bloom {
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(ellipse at center, 
+                rgba(180, 190, 254, 0.3) 0%, 
+                transparent 70%
+            );
+            opacity: 0;
+        }
+
+        /* Screen content wrapper - hidden during boot */
+        .crt-screen-content {
+            opacity: 0;
+            transform: scale(1);
+            filter: brightness(1) saturate(1);
+        }
+
+        /* ============================================
+           CRT BOOT ANIMATION STATES
+           ============================================ */
+        
+        /* Phase 1: Line appears and stretches horizontally */
+        .crt-boot-overlay.phase-1 .crt-boot-line {
+            animation: crt-line-appear 0.15s ease-out forwards;
+        }
+
+        @keyframes crt-line-appear {
+            0% {
+                opacity: 0;
+                transform: translateY(-50%) scaleX(0);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(-50%) scaleX(1);
+            }
+        }
+
+        /* Phase 2: Line expands vertically into full screen */
+        .crt-boot-overlay.phase-2 .crt-boot-line {
+            animation: crt-line-expand 0.3s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+        }
+
+        @keyframes crt-line-expand {
+            0% {
+                height: 2px;
+                opacity: 1;
+                transform: translateY(-50%) scaleX(1);
+            }
+            50% {
+                height: 20px;
+                opacity: 1;
+                background: #fff;
+                box-shadow: 
+                    0 0 40px 15px rgba(255, 255, 255, 0.9),
+                    0 0 80px 30px rgba(180, 190, 254, 0.5);
+            }
+            100% {
+                height: 100vh;
+                opacity: 1;
+                transform: translateY(-50%) scaleX(1);
+                background: linear-gradient(180deg, 
+                    #1e1e2e 0%, 
+                    #2a2a3e 50%, 
+                    #1e1e2e 100%
+                );
+                box-shadow: none;
+            }
+        }
+
+        /* Phase 2: Static appears */
+        .crt-boot-overlay.phase-2 .crt-boot-static {
+            animation: crt-static-flash 0.3s ease-out forwards;
+        }
+
+        @keyframes crt-static-flash {
+            0% { opacity: 0; }
+            30% { opacity: 0.6; }
+            60% { opacity: 0.3; }
+            100% { opacity: 0; }
+        }
+
+        /* Phase 2: Bloom flash */
+        .crt-boot-overlay.phase-2 .crt-boot-bloom {
+            animation: crt-bloom-flash 0.4s ease-out forwards;
+        }
+
+        @keyframes crt-bloom-flash {
+            0% { opacity: 0; }
+            30% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+
+        /* Phase 3: Screen stabilizes with wobble */
+        .crt-boot-overlay.phase-3 {
+            animation: crt-screen-wobble 0.25s ease-out forwards;
+            background: transparent;
+        }
+
+        .crt-boot-overlay.phase-3 .crt-boot-line {
+            opacity: 0;
+        }
+
+        @keyframes crt-screen-wobble {
+            0% { 
+                transform: scale(1.02) translateY(-2px);
+                filter: brightness(1.5) saturate(1.3);
+            }
+            25% {
+                transform: scale(0.99) translateY(1px);
+            }
+            50% {
+                transform: scale(1.01) translateY(-1px);
+                filter: brightness(1.2) saturate(1.1);
+            }
+            75% {
+                transform: scale(1) translateY(0.5px);
+            }
+            100% {
+                transform: scale(1) translateY(0);
+                filter: brightness(1) saturate(1);
+            }
+        }
+
+        /* Phase 3: Content fades in with CRT warmup */
+        .crt-screen-content.phase-3 {
+            animation: crt-content-appear 0.5s ease-out forwards;
+        }
+
+        @keyframes crt-content-appear {
+            0% {
+                opacity: 0;
+                filter: brightness(2) saturate(0.5) blur(2px);
+                transform: scale(1.01);
+            }
+            30% {
+                opacity: 1;
+                filter: brightness(1.4) saturate(0.8) blur(1px);
+            }
+            60% {
+                filter: brightness(1.1) saturate(1) blur(0);
+                transform: scale(1);
+            }
+            100% {
+                opacity: 1;
+                filter: brightness(1) saturate(1) blur(0);
+                transform: scale(1);
+            }
+        }
+
+        /* Phase 4: Overlay fades out completely */
+        .crt-boot-overlay.phase-4 {
+            animation: crt-overlay-fadeout 0.3s ease-out forwards;
+            pointer-events: none;
+        }
+
+        @keyframes crt-overlay-fadeout {
+            0% { opacity: 1; }
+            100% { opacity: 0; visibility: hidden; }
+        }
+
+        /* Scanline flicker during boot */
+        .crt-boot-overlay.phase-2::before,
+        .crt-boot-overlay.phase-3::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: repeating-linear-gradient(
+                0deg,
+                transparent 0px,
+                transparent 2px,
+                rgba(0, 0, 0, 0.3) 2px,
+                rgba(0, 0, 0, 0.3) 4px
+            );
+            pointer-events: none;
+            animation: scanline-scroll 0.1s linear infinite;
+        }
+
+        @keyframes scanline-scroll {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(4px); }
+        }
+
+        /* CRT vignette that persists subtly */
+        .crt-vignette {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 9998;
+            background: radial-gradient(
+                ellipse at center,
+                transparent 0%,
+                transparent 60%,
+                rgba(0, 0, 0, 0.15) 100%
+            );
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        .crt-vignette.active {
+            opacity: 1;
+        }
+
+        /* Subtle CRT curvature effect on the whole screen */
+        .crt-curve {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 9997;
+            background: radial-gradient(
+                ellipse 120% 120% at center,
+                transparent 0%,
+                transparent 85%,
+                rgba(0, 0, 0, 0.08) 100%
+            );
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        .crt-curve.active {
+            opacity: 1;
+        }
+
         /* Terminal Window Chrome */
         .terminal-window {
             height: 100vh;
@@ -813,49 +1076,274 @@
         }
 
         /* ============================================
-           TOGGLE SWITCH WITH MICRO-INTERACTIONS
+           INDUSTRIAL TOGGLE SWITCH WITH SPARKS
            ============================================ */
+        .toggle-switch-container {
+            position: relative;
+            display: inline-block;
+        }
+
         .toggle-switch {
             position: relative;
             width: 56px;
             height: 28px;
-            background: rgba(49, 50, 68, 0.6);
+            background: linear-gradient(180deg, 
+                rgba(30, 30, 46, 0.9) 0%,
+                rgba(49, 50, 68, 0.8) 50%,
+                rgba(30, 30, 46, 0.9) 100%
+            );
             backdrop-filter: blur(10px);
             border-radius: 14px;
             cursor: pointer;
-            transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
-            border: 1px solid var(--ctp-surface1);
+            transition: all 0.15s ease;
+            border: 2px solid var(--ctp-surface1);
+            box-shadow: 
+                inset 0 2px 4px rgba(0, 0, 0, 0.4),
+                0 1px 0 rgba(255, 255, 255, 0.05);
+            overflow: visible;
+        }
+
+        /* Metal contact plate inside switch */
+        .toggle-switch::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 8px;
+            right: 8px;
+            height: 4px;
+            transform: translateY(-50%);
+            background: linear-gradient(90deg,
+                var(--ctp-peach) 0%,
+                var(--ctp-surface1) 30%,
+                var(--ctp-surface1) 70%,
+                var(--ctp-green) 100%
+            );
+            border-radius: 2px;
+            opacity: 0.6;
+            box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.3);
         }
 
         .toggle-switch:hover {
             transform: scale(1.05);
-            box-shadow: 0 0 20px rgba(180, 190, 254, 0.2);
+            border-color: var(--ctp-surface2);
         }
 
-        .toggle-switch.active {
-            background: linear-gradient(135deg, var(--ctp-green), var(--ctp-teal));
-            border-color: var(--ctp-green);
-            box-shadow: 
-                0 0 30px rgba(166, 227, 161, 0.4),
-                0 0 60px rgba(166, 227, 161, 0.2);
-        }
-
+        /* The toggle knob */
         .toggle-switch::after {
             content: '';
             position: absolute;
-            top: 3px;
-            left: 3px;
+            top: 2px;
+            left: 2px;
             width: 20px;
             height: 20px;
-            background: var(--ctp-text);
+            background: linear-gradient(145deg, 
+                #5a5a7a 0%,
+                #3a3a5a 50%,
+                #2a2a4a 100%
+            );
             border-radius: 50%;
-            transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 
+                0 2px 8px rgba(0, 0, 0, 0.5),
+                inset 0 2px 4px rgba(255, 255, 255, 0.1),
+                inset 0 -2px 4px rgba(0, 0, 0, 0.2);
+            z-index: 2;
+        }
+
+        /* Knob contact point indicator */
+        .toggle-switch .knob-contact {
+            position: absolute;
+            top: 50%;
+            left: 14px;
+            width: 4px;
+            height: 4px;
+            background: var(--ctp-overlay0);
+            border-radius: 50%;
+            transform: translateY(-50%);
+            transition: all 0.15s ease;
+            z-index: 3;
+            box-shadow: 0 0 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .toggle-switch.active .knob-contact {
+            left: 42px;
+            background: var(--ctp-green);
+            box-shadow: 0 0 8px var(--ctp-green);
+        }
+
+        /* Active state */
+        .toggle-switch.active {
+            background: linear-gradient(180deg, 
+                rgba(30, 50, 40, 0.9) 0%,
+                rgba(40, 70, 55, 0.8) 50%,
+                rgba(30, 50, 40, 0.9) 100%
+            );
+            border-color: var(--ctp-green);
+            box-shadow: 
+                inset 0 2px 4px rgba(0, 0, 0, 0.4),
+                0 0 20px rgba(166, 227, 161, 0.3),
+                0 0 40px rgba(166, 227, 161, 0.1);
         }
 
         .toggle-switch.active::after {
             transform: translateX(28px);
-            background: var(--ctp-crust);
+            background: linear-gradient(145deg, 
+                #7a9a7a 0%,
+                #5a7a5a 50%,
+                #3a5a3a 100%
+            );
+        }
+
+        /* Clunk animation - mechanical depression */
+        .toggle-switch.clunking {
+            animation: switch-clunk 0.15s ease-out;
+        }
+
+        .toggle-switch.clunking::after {
+            animation: knob-slam 0.15s ease-out;
+        }
+
+        @keyframes switch-clunk {
+            0% { transform: scale(1); }
+            30% { transform: scale(0.95) translateY(2px); }
+            50% { transform: scale(0.97) translateY(1px); }
+            100% { transform: scale(1) translateY(0); }
+        }
+
+        @keyframes knob-slam {
+            0% { box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5), inset 0 2px 4px rgba(255, 255, 255, 0.1); }
+            30% { box-shadow: 0 1px 4px rgba(0, 0, 0, 0.7), inset 0 2px 4px rgba(255, 255, 255, 0.1); }
+            100% { box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5), inset 0 2px 4px rgba(255, 255, 255, 0.1); }
+        }
+
+        /* Spark container - fixed overlay for sparks to fly anywhere */
+        .spark-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 10000;
+            overflow: visible;
+        }
+
+        /* Individual spark particle */
+        .spark {
+            position: absolute;
+            width: 3px;
+            height: 3px;
+            border-radius: 50%;
+            pointer-events: none;
+            opacity: 0;
+        }
+
+        .spark.spark-fire {
+            animation: spark-fly 0.4s ease-out forwards;
+        }
+
+        /* Different spark colors */
+        .spark.spark-yellow {
+            background: #ffff00;
+            box-shadow: 0 0 6px 2px #ffff00, 0 0 12px 4px #ffaa00;
+        }
+
+        .spark.spark-orange {
+            background: #ffaa00;
+            box-shadow: 0 0 6px 2px #ffaa00, 0 0 12px 4px #ff6600;
+        }
+
+        .spark.spark-white {
+            background: #ffffff;
+            box-shadow: 0 0 6px 2px #ffffff, 0 0 12px 4px #aaaaff;
+        }
+
+        .spark.spark-blue {
+            background: #88aaff;
+            box-shadow: 0 0 6px 2px #88aaff, 0 0 12px 4px #4466ff;
+        }
+
+        @keyframes spark-fly {
+            0% {
+                opacity: 1;
+                transform: translate(0, 0) scale(1);
+            }
+            20% {
+                opacity: 1;
+                transform: translate(var(--spark-x, 20px), var(--spark-y, -20px)) scale(1.2);
+            }
+            100% {
+                opacity: 0;
+                transform: translate(calc(var(--spark-x, 20px) * 2.5), calc(var(--spark-y, -20px) * 2.5 + 15px)) scale(0);
+            }
+        }
+
+        /* Electric arc flash at contact point */
+        .arc-flash {
+            position: absolute;
+            top: 50%;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            transform: translateY(-50%);
+            pointer-events: none;
+            opacity: 0;
+            z-index: 50;
+        }
+
+        .arc-flash.flash-active {
+            animation: arc-flash-pulse 0.2s ease-out forwards;
+        }
+
+        .arc-flash.flash-left {
+            left: 10px;
+            background: var(--ctp-peach);
+            box-shadow: 
+                0 0 10px 4px var(--ctp-peach),
+                0 0 20px 8px rgba(250, 179, 135, 0.5),
+                0 0 40px 12px rgba(250, 179, 135, 0.2);
+        }
+
+        .arc-flash.flash-right {
+            right: 10px;
+            background: var(--ctp-green);
+            box-shadow: 
+                0 0 10px 4px var(--ctp-green),
+                0 0 20px 8px rgba(166, 227, 161, 0.5),
+                0 0 40px 12px rgba(166, 227, 161, 0.2);
+        }
+
+        @keyframes arc-flash-pulse {
+            0% {
+                opacity: 0;
+                transform: translateY(-50%) scale(0.5);
+            }
+            20% {
+                opacity: 1;
+                transform: translateY(-50%) scale(1.5);
+            }
+            40% {
+                opacity: 0.8;
+                transform: translateY(-50%) scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-50%) scale(0.3);
+            }
+        }
+
+        /* Screen flicker effect when switch is thrown */
+        .crt-screen-content.power-flicker {
+            animation: power-draw-flicker 0.2s ease-out;
+        }
+
+        @keyframes power-draw-flicker {
+            0% { filter: brightness(1); }
+            10% { filter: brightness(0.7); }
+            20% { filter: brightness(1.1); }
+            30% { filter: brightness(0.85); }
+            50% { filter: brightness(1.05); }
+            100% { filter: brightness(1); }
         }
 
         .status-indicator {
@@ -1741,26 +2229,42 @@
     </style>
 </head>
 <body>
-    <!-- Hero Animation: Floating Orbs -->
-    <div class="hero-orbs">
-        <div class="orb orb-1"></div>
-        <div class="orb orb-2"></div>
-        <div class="orb orb-3"></div>
-        <div class="orb orb-4"></div>
+    <!-- CRT Boot Sequence Overlay -->
+    <div class="crt-boot-overlay" id="crt-boot-overlay">
+        <div class="crt-boot-line"></div>
+        <div class="crt-boot-static"></div>
+        <div class="crt-boot-bloom"></div>
     </div>
 
-    <div class="background-grid"></div>
-    <div class="scanlines"></div>
+    <!-- CRT Screen Effects (persist after boot) -->
+    <div class="crt-vignette" id="crt-vignette"></div>
+    <div class="crt-curve" id="crt-curve"></div>
 
-    <!-- Noise Texture Overlay -->
-    <div class="noise-overlay"></div>
-    <!-- December Snow Overlay (10s, non-interactive) -->
-    <canvas id="snow-canvas" class="snow-canvas" aria-hidden="true"></canvas>
+    <!-- Spark overlay for toggle switch effects -->
+    <div class="spark-container" id="spark-container"></div>
 
-    <!-- Noise Texture Overlay -->
-    <div class="noise-overlay"></div>
+    <!-- Main Screen Content (wrapped for boot animation) -->
+    <div class="crt-screen-content" id="crt-screen-content">
+        <!-- Hero Animation: Floating Orbs -->
+        <div class="hero-orbs">
+            <div class="orb orb-1"></div>
+            <div class="orb orb-2"></div>
+            <div class="orb orb-3"></div>
+            <div class="orb orb-4"></div>
+        </div>
 
-    <div class="terminal-window">
+        <div class="background-grid"></div>
+        <div class="scanlines"></div>
+
+        <!-- Noise Texture Overlay -->
+        <div class="noise-overlay"></div>
+        <!-- December Snow Overlay (10s, non-interactive) -->
+        <canvas id="snow-canvas" class="snow-canvas" aria-hidden="true"></canvas>
+
+        <!-- Noise Texture Overlay -->
+        <div class="noise-overlay"></div>
+
+        <div class="terminal-window">
         <div class="terminal-titlebar">
             <div class="traffic-lights">
                 <div class="traffic-light red"></div>
@@ -1829,7 +2333,13 @@
             <div class="panel bottom-left">
                 <div class="toggle-container">
                     <span class="toggle-label">Open Status:</span>
-                    <div class="toggle-switch" id="open-toggle"></div>
+                    <div class="toggle-switch-container">
+                        <div class="toggle-switch" id="open-toggle">
+                            <span class="knob-contact"></span>
+                            <div class="arc-flash flash-left"></div>
+                            <div class="arc-flash flash-right"></div>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="flex-spacer"></div>
@@ -1867,6 +2377,7 @@
             </div>
         </div>
     </div>
+    </div><!-- End crt-screen-content wrapper -->
 
     <script>
         // Embedded CSV Data
@@ -2071,16 +2582,79 @@ Clean I & II,CS2500,CA Clean I - On Board;CA Clean II - On Board;CA Clean I - Re
                 this.statusIndicator = document.getElementById('status-indicator');
                 this.statusText = document.getElementById('status-text');
                 this.printheadAssembly = document.getElementById('printhead-assembly');
+                this.sparkContainer = document.getElementById('spark-container');
             }
 
             bindEvents() {
                 this.openToggle.addEventListener('click', () => {
                     this.isOpenedMode = !this.isOpenedMode;
+                    this.triggerSwitchEffect();
                     this.updateToggleUI();
                 });
                 this.printBtn.addEventListener('click', () => this.printSelectedMaterials());
                 this.clearSelectionBtn.addEventListener('click', () => this.clearSelection());
                 this.clearSpoolBtn.addEventListener('click', () => this.clearSpool());
+            }
+
+            triggerSwitchEffect() {
+                // Add clunk animation
+                this.openToggle.classList.add('clunking');
+                setTimeout(() => this.openToggle.classList.remove('clunking'), 150);
+
+                // Trigger arc flash
+                const flashSide = this.isOpenedMode ? 'flash-right' : 'flash-left';
+                const arcFlash = this.openToggle.querySelector(`.${flashSide}`);
+                if (arcFlash) {
+                    arcFlash.classList.add('flash-active');
+                    setTimeout(() => arcFlash.classList.remove('flash-active'), 200);
+                }
+
+                // Generate sparks
+                this.generateSparks();
+            }
+
+            generateSparks() {
+                const sparkCount = 8 + Math.floor(Math.random() * 6); // 8-13 sparks
+                const colors = ['spark-yellow', 'spark-orange', 'spark-white', 'spark-blue'];
+                
+                // Get toggle switch position on screen
+                const toggleRect = this.openToggle.getBoundingClientRect();
+                const toggleCenterY = toggleRect.top + toggleRect.height / 2;
+                
+                // Determine spark origin based on switch state (left or right contact point)
+                const originX = this.isOpenedMode 
+                    ? toggleRect.left + toggleRect.width - 12  // Right contact
+                    : toggleRect.left + 12;                     // Left contact
+                
+                for (let i = 0; i < sparkCount; i++) {
+                    const spark = document.createElement('div');
+                    spark.className = `spark ${colors[Math.floor(Math.random() * colors.length)]}`;
+                    
+                    // Random trajectory - mostly upward and outward
+                    const angle = (Math.random() * 140 - 70) * (Math.PI / 180); // -70 to +70 degrees from vertical
+                    const distance = 20 + Math.random() * 40;
+                    const sparkX = Math.sin(angle) * distance * (this.isOpenedMode ? 1 : -1);
+                    const sparkY = -Math.cos(angle) * distance - Math.random() * 15;
+                    
+                    // Position spark at the contact point in screen coordinates
+                    spark.style.left = `${originX}px`;
+                    spark.style.top = `${toggleCenterY}px`;
+                    spark.style.setProperty('--spark-x', `${sparkX}px`);
+                    spark.style.setProperty('--spark-y', `${sparkY}px`);
+                    
+                    // Stagger spark firing slightly
+                    spark.style.animationDelay = `${Math.random() * 0.05}s`;
+                    
+                    this.sparkContainer.appendChild(spark);
+                    
+                    // Trigger animation
+                    requestAnimationFrame(() => {
+                        spark.classList.add('spark-fire');
+                    });
+                    
+                    // Remove spark after animation
+                    setTimeout(() => spark.remove(), 500);
+                }
             }
 
             renderInstruments() {
@@ -2553,6 +3127,86 @@ Clean I & II,CS2500,CA Clean I - On Board;CA Clean II - On Board;CA Clean I - Re
         document.addEventListener('DOMContentLoaded', () => {
             window.app = new LabelPrinterApp();
         });
+
+        // ============================================
+        // CRT POWER-ON BOOT SEQUENCE
+        // ============================================
+        (function() {
+            // Check for reduced motion preference
+            function reducedMotion() {
+                return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            }
+
+            // Skip boot sequence if user prefers reduced motion
+            if (reducedMotion()) {
+                document.addEventListener('DOMContentLoaded', () => {
+                    const overlay = document.getElementById('crt-boot-overlay');
+                    const content = document.getElementById('crt-screen-content');
+                    const vignette = document.getElementById('crt-vignette');
+                    const curve = document.getElementById('crt-curve');
+                    
+                    if (overlay) overlay.style.display = 'none';
+                    if (content) content.style.opacity = '1';
+                    if (vignette) vignette.classList.add('active');
+                    if (curve) curve.classList.add('active');
+                });
+                return;
+            }
+
+            document.addEventListener('DOMContentLoaded', () => {
+                const overlay = document.getElementById('crt-boot-overlay');
+                const content = document.getElementById('crt-screen-content');
+                const vignette = document.getElementById('crt-vignette');
+                const curve = document.getElementById('crt-curve');
+
+                if (!overlay || !content) return;
+
+                // Timeline for boot sequence
+                const PHASE_TIMINGS = {
+                    phase1_start: 100,      // Initial delay before line appears
+                    phase1_duration: 150,   // Line stretches horizontally
+                    phase2_start: 250,      // Line starts expanding vertically
+                    phase2_duration: 300,   // Vertical expansion + static
+                    phase3_start: 550,      // Screen stabilizes
+                    phase3_duration: 400,   // Wobble + content fade in
+                    phase4_start: 950,      // Overlay starts fading
+                    complete: 1250          // Boot complete
+                };
+
+                // Phase 1: Horizontal line appears
+                setTimeout(() => {
+                    overlay.classList.add('phase-1');
+                }, PHASE_TIMINGS.phase1_start);
+
+                // Phase 2: Line expands vertically, static flashes
+                setTimeout(() => {
+                    overlay.classList.remove('phase-1');
+                    overlay.classList.add('phase-2');
+                }, PHASE_TIMINGS.phase2_start);
+
+                // Phase 3: Screen wobble, content appears
+                setTimeout(() => {
+                    overlay.classList.remove('phase-2');
+                    overlay.classList.add('phase-3');
+                    content.classList.add('phase-3');
+                    
+                    // Activate persistent CRT effects
+                    if (vignette) vignette.classList.add('active');
+                    if (curve) curve.classList.add('active');
+                }, PHASE_TIMINGS.phase3_start);
+
+                // Phase 4: Overlay fades out completely
+                setTimeout(() => {
+                    overlay.classList.remove('phase-3');
+                    overlay.classList.add('phase-4');
+                }, PHASE_TIMINGS.phase4_start);
+
+                // Cleanup: Remove overlay from DOM
+                setTimeout(() => {
+                    overlay.remove();
+                }, PHASE_TIMINGS.complete);
+            });
+        })();
 
     </script>
 </body>
